@@ -62,8 +62,11 @@ The single sentence this project exists to earn:
 
 - [x] 0. Confirm sub-area — **DONE: RAG confirmed** (labeler competence verified 3/3, incl. a flipped-meaning perturbation).
 - [x] 1. **Claim schema** in `specs/` — DONE (`specs/claim-schema.md`, plus `specs/corpus-manifest.md` for the corpus contract).
-- [ ] 2. Pull + freeze 15–20 real RAG papers (abstracts + HTML where available) ← **CURRENT**
-- [ ] 3. Hand-build ground-truth claim set against the schema
+- [x] 2. Pull + freeze 15–20 real RAG papers (abstracts + HTML where available) — DONE:
+      21 papers frozen in `data/corpus.v1.json` (18 in-window cs.CL/cs.IR 2024-09–2026-08,
+      3 verified anchors), fetched via `scripts/fetch_corpus.py`. All 21 have `arxiv_native`
+      HTML; abstract+HTML hashes verified against cache.
+- [ ] 3. Hand-build ground-truth claim set against the schema ← **CURRENT**
 - [ ] 4. Writer + Verifier (measured against the set from line one)
 - [ ] 5. Prove it — precision/recall on injected perturbations, per type
 - [ ] 6. Evals into CI (gate merges) — only after step 5 numbers are locally stable
