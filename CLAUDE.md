@@ -67,11 +67,14 @@ The single sentence this project exists to earn:
       3 verified anchors), fetched via `scripts/fetch_corpus.py`. All 21 have `arxiv_native`
       HTML; abstract+HTML hashes verified against cache.
 - [ ] 3. Hand-build ground-truth claim set against the schema ← **CURRENT** (IN PROGRESS:
-      15/~40-50 claims confirmed in `data/claims.jsonl` — 9 supported, 6 unsupported, one per
-      `perturbation_type`. Every row was reviewed claim-by-claim against its `cited_span` by
-      the domain-competent human reviewer per INVARIANT 6; none were LLM-labeled. Still open:
-      claim-schema.md's own per-type minimum-count and body-vs-abstract-span decisions, and
-      scaling this batch up to the full target ratio.)
+      30/~40-50 claims confirmed in `data/claims.jsonl` — 17 supported, 13 unsupported, every
+      `perturbation_type` has ≥2 examples, 13/21 corpus papers used. Every row was reviewed
+      claim-by-claim against its `cited_span` by the domain-competent human reviewer per
+      INVARIANT 6; none were LLM-labeled. Paused mid-batch at the human's request — resume by
+      continuing the same one-claim-at-a-time review loop. Still open: claim-schema.md's own
+      per-type minimum-count and body-vs-abstract-span decisions, and a known wrinkle where
+      arXiv's abstract API field sometimes preserves raw LaTeX escapes (e.g. "5.0\%") not
+      present in the rendered page — worked around per-claim so far, not fixed at the source.)
 - [ ] 4. Writer + Verifier (measured against the set from line one)
 - [ ] 5. Prove it — precision/recall on injected perturbations, per type
 - [ ] 6. Evals into CI (gate merges) — only after step 5 numbers are locally stable
