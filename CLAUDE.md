@@ -66,7 +66,12 @@ The single sentence this project exists to earn:
       21 papers frozen in `data/corpus.v1.json` (18 in-window cs.CL/cs.IR 2024-09–2026-08,
       3 verified anchors), fetched via `scripts/fetch_corpus.py`. All 21 have `arxiv_native`
       HTML; abstract+HTML hashes verified against cache.
-- [ ] 3. Hand-build ground-truth claim set against the schema ← **CURRENT**
+- [ ] 3. Hand-build ground-truth claim set against the schema ← **CURRENT** (IN PROGRESS:
+      15/~40-50 claims confirmed in `data/claims.jsonl` — 9 supported, 6 unsupported, one per
+      `perturbation_type`. Every row was reviewed claim-by-claim against its `cited_span` by
+      the domain-competent human reviewer per INVARIANT 6; none were LLM-labeled. Still open:
+      claim-schema.md's own per-type minimum-count and body-vs-abstract-span decisions, and
+      scaling this batch up to the full target ratio.)
 - [ ] 4. Writer + Verifier (measured against the set from line one)
 - [ ] 5. Prove it — precision/recall on injected perturbations, per type
 - [ ] 6. Evals into CI (gate merges) — only after step 5 numbers are locally stable
