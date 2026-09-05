@@ -23,7 +23,7 @@
     "max_anchors": 3,
     "anchor_rule": "pre-window papers admissible only as anchors; each requires selection_note naming >=2 in-window papers that cite or contest it"
   },
-  "corpus_hash": "sha256:7fa1d64aeaab23c85faa30a0329b3275555bd53240dd34f5ee76ec377ade6c20",
+  "corpus_hash": "sha256:cb3b0aae91d8af4e88ffe8e875c7e5dcd7b47cb52d2e6fe1b2598744ede5832a",
   "papers": [
     {
       "paper_id": "2005.11401v4",
@@ -68,7 +68,7 @@
           "fetched_at": "2026-09-05T20:47:11Z",
           "bytes": 244097,
           "sha256_raw": "sha256:7f643ebcf14fa024288da5e7d79c834246101f8ff8d1258994b690fc79aeb892",
-          "sha256_content": "sha256:2402705acdaf734259b3c70d8b61fd6b7c0b0b96dc847b44de69ad58ab66a002",
+          "sha256_content": "sha256:22270e00eee7c8d6dfafac095f300097cd8231067e680e87acef18d25e6342ae",
           "generator": "LaTeXML oxide (version 0.7.6)"
         }
       },
@@ -113,7 +113,7 @@
           "fetched_at": "2026-09-05T20:47:11Z",
           "bytes": 857328,
           "sha256_raw": "sha256:646e00572056f1992a7d258385db469cab6892c69fa2a7a6f1e76ff1fec68992",
-          "sha256_content": "sha256:eb41459fefdbdd096d1ed535170e0a8171154c300b361e4b678257771288d446",
+          "sha256_content": "sha256:a10edf7a4fc8ae3fd7d11a16ce1de9f46349b13aa5f1fc04c00b3965f336e55d",
           "generator": "LaTeXML oxide (version 0.7.6)"
         }
       },
@@ -163,7 +163,7 @@
           "fetched_at": "2026-09-05T20:47:11Z",
           "bytes": 619003,
           "sha256_raw": "sha256:e71aba110390a5844dc886c4469547540c0de0552a81e1dafbc6a428871462c1",
-          "sha256_content": "sha256:85a877a4c588fdc2750ac676cdb19b659fa5694d42899effa6fe15a6e5dd5d19",
+          "sha256_content": "sha256:d4626605ac7f70205ecbc61e8948e28aaacc0aac8055560801765732ef7ac985",
           "generator": "LaTeXML oxide (version 0.7.6)"
         }
       },
@@ -204,7 +204,7 @@
           "fetched_at": "2026-09-05T20:47:11Z",
           "bytes": 81390,
           "sha256_raw": "sha256:50553c16162698474b86bc665d8bf8f91f1e1a8bb93647d937b660c39ff5ed64",
-          "sha256_content": "sha256:82a179efcbf7543b58fada1677bb3357a14d0d0d110b83c63a67920c8acff0f6",
+          "sha256_content": "sha256:fd478cb29ba62755092bcda3770c8b55eb9d0c07c0bd3805b9f0216e282fc4ce",
           "generator": "LaTeXML oxide (version 0.7.6)"
         }
       },
@@ -247,7 +247,7 @@
           "fetched_at": "2026-09-05T20:47:12Z",
           "bytes": 284064,
           "sha256_raw": "sha256:e2fc7962ab7a74fed067eed084f31143f9a850fc82183f2871ef563a74ad29ef",
-          "sha256_content": "sha256:a0e6f957e331fce3b25f32b58f9b6d785a98c25fc0a30325fe3f4646ac38248d",
+          "sha256_content": "sha256:49a728174696276a063077d98a6571da73ef43dbff31bd36bc1d2c84b34b0c78",
           "generator": "LaTeXML oxide (version 0.7.6)"
         }
       },
@@ -293,7 +293,7 @@
           "fetched_at": "2026-09-05T20:47:12Z",
           "bytes": 527039,
           "sha256_raw": "sha256:42fe3c9611a29dad4214f7ac82ce85a5dfff1478033bc98345d4b369330dbd38",
-          "sha256_content": "sha256:78f0fd0ffabd6f3091bebefcf9208e5405e60519afb9a68fc4f6eaca6a255af7",
+          "sha256_content": "sha256:8e86a5f68c60dfb7b7dc7c286895fe736eba0ee2cc3fd99549cc8a4694d04721",
           "generator": "LaTeXML oxide (version 0.7.6)"
         }
       },
@@ -339,7 +339,7 @@
           "fetched_at": "2026-09-05T20:47:12Z",
           "bytes": 249045,
           "sha256_raw": "sha256:dac3ef92c5a47bd962a069031fe1ca65e216f8a35d5461eef08d9bac13a73e2e",
-          "sha256_content": "sha256:df61ceb315e5dd73d8e71106069ff2cf2bde78d7224be72c248a7929523765ec",
+          "sha256_content": "sha256:09269571b7b5502fd2bb72fd2332a57ced69e4305157bb1cc4a6a09a2c5126a0",
           "generator": "LaTeXML oxide (version 0.7.6)"
         }
       },
@@ -389,7 +389,7 @@
           "fetched_at": "2026-09-05T20:47:12Z",
           "bytes": 458819,
           "sha256_raw": "sha256:a72805963e9df8e77fd96b8e4f434d4dc4c4c669f7a666b8ef569a0d77b6f83a",
-          "sha256_content": "sha256:417fe9d9ab57d720f1b90d2e46b58c1dad651c222fafcb28c3e73faaa156b06e",
+          "sha256_content": "sha256:d155f3e54929f57e59a52ca92d7ff9449d09cd6bf941185d4479b41f32967333",
           "generator": "LaTeXML oxide (version 0.7.6)"
         }
       },
@@ -436,7 +436,7 @@
           "fetched_at": "2026-09-05T20:47:12Z",
           "bytes": 444490,
           "sha256_raw": "sha256:8ce8a840fa5cf0e803d58408c62ebaa32417591dd772172733cbfad7cc07acf7",
-          "sha256_content": "sha256:e933ee615ff88a36dc5737591473675ddf4fb328a54c79f59469473f765c22a1",
+          "sha256_content": "sha256:4a1da1450ee8eb6c824728c34b46f1fedaacdb630642125a81bf25765af96944",
           "generator": "LaTeXML oxide (version 0.7.6)"
         }
       },
@@ -477,7 +477,7 @@
           "fetched_at": "2026-09-05T20:47:13Z",
           "bytes": 386572,
           "sha256_raw": "sha256:40843f290245d2aa827bc95cc16c0fe8c8d5895987d8d74987f9ffb0c858e3f4",
-          "sha256_content": "sha256:758bf39549ab1194dcb2b239fe2620d82d3536d1e5d5be9a5c5b416dcab57c14",
+          "sha256_content": "sha256:d155077d42aa0f492f4bb94d131e1c3c5342e21f05f74067bb0a23e58561d3d0",
           "generator": "LaTeXML oxide (version 0.7.6)"
         }
       },
@@ -519,7 +519,7 @@
           "fetched_at": "2026-09-05T20:47:13Z",
           "bytes": 226994,
           "sha256_raw": "sha256:2bd7ec9e2ca5c2a318655cee034aeb3715395bad0072b1fbadd5f5a89fc4872f",
-          "sha256_content": "sha256:3c3458a915bcf8ff99a9127ab8c668f5912b7ea1b807c979e12e0fce9e11db43",
+          "sha256_content": "sha256:114af21232861014d335fa95d263261ee1da8d1da956f74265905d5734eca958",
           "generator": "LaTeXML oxide (version 0.7.6)"
         }
       },
@@ -570,7 +570,7 @@
           "fetched_at": "2026-09-05T20:47:13Z",
           "bytes": 107190,
           "sha256_raw": "sha256:98abcd826f395712053b315da98ee3fba5d0f842fb062082b717c712c8fce992",
-          "sha256_content": "sha256:feeb7fac99af4e1f5dbdea9fa59a971b85cfbb8c947824ac372d945efb31842b",
+          "sha256_content": "sha256:f498cd0a85526f6d0a660c0ea8bb8f63a581980bf9b2af98722a4e5ba3d012ce",
           "generator": "LaTeXML oxide (version 0.7.6)"
         }
       },
@@ -615,7 +615,7 @@
           "fetched_at": "2026-09-05T20:47:13Z",
           "bytes": 157116,
           "sha256_raw": "sha256:75a3f90d968b284b6d20b393c94b24d001626cfa9e423a5e8f670d10b10616a8",
-          "sha256_content": "sha256:45a46f08017cef4d5eea4d95601ea2be644e6b9d7a3dba4f7d7d51af64bf3bde",
+          "sha256_content": "sha256:c4a4a0bd97b1783a185e52972b4422330665a87c8101bce3aeea7519ef24a551",
           "generator": "LaTeXML oxide (version 0.7.6)"
         }
       },
@@ -658,7 +658,7 @@
           "fetched_at": "2026-09-05T20:47:13Z",
           "bytes": 224847,
           "sha256_raw": "sha256:25d7f9302bcc37a793b551d644b906922341d5f9307bfe6d24bfe4a2442699a9",
-          "sha256_content": "sha256:7968a0aa47e218e0eb520ffde3477fe54d964498e159e8b99d23d4e9b1ab7c47",
+          "sha256_content": "sha256:8560437f1c0ff122e329b83c0db1ccd1f5eea5a337e87fd6b75f741e8acddde9",
           "generator": "LaTeXML oxide (version 0.7.6)"
         }
       },
@@ -699,7 +699,7 @@
           "fetched_at": "2026-09-05T20:47:13Z",
           "bytes": 396680,
           "sha256_raw": "sha256:4686f5f504fc5902c59a0f1a5fd5dd34e509b4e54d16ca5507e05a50ac3fa2ec",
-          "sha256_content": "sha256:cb0015606bd19a0799a05eda785856389e51e11a9da0249eb6bdd77206e266a9",
+          "sha256_content": "sha256:9c4ea6c9acbe3895a93305e1bccb2800725965547205ac8e5ae5a3d752d8b634",
           "generator": "LaTeXML oxide (version 0.7.6)"
         }
       },
@@ -741,7 +741,7 @@
           "fetched_at": "2026-09-05T20:47:14Z",
           "bytes": 209471,
           "sha256_raw": "sha256:81d8774b7461ddf4f322c3952535d33f3ed7bee5c1f26876c16981b2980421bf",
-          "sha256_content": "sha256:a920e9118b0b4c810b3df5db4c46fa068ca5cba6b346f75f308e4bbed7919996",
+          "sha256_content": "sha256:26e0bb33a42981e1ca3199ae128e2a68ce9c558361da637b3b88d3c3e3583d80",
           "generator": "LaTeXML oxide (version 0.7.6)"
         }
       },
@@ -785,7 +785,7 @@
           "fetched_at": "2026-09-05T20:47:14Z",
           "bytes": 377738,
           "sha256_raw": "sha256:0803e041f5c0cbeb4cd2f3f9b386a8f1e674411e82921a587b4121d95e74a200",
-          "sha256_content": "sha256:ff4b870e65a453db571d8e1064c3e6ff470c9702611035097a594c5857937cdc",
+          "sha256_content": "sha256:2935d3a0bdde8330f693ecc25564b0c5ec90b33821421c299a61072028b255d2",
           "generator": "LaTeXML oxide (version 0.7.6)"
         }
       },
@@ -825,7 +825,7 @@
           "fetched_at": "2026-09-05T20:47:14Z",
           "bytes": 265736,
           "sha256_raw": "sha256:7bab2bf75c31f457d44e9697734bb654efdef634309c8836054f1de0023ee79c",
-          "sha256_content": "sha256:7888d0a7d15da6e0272107ff4f4ccaaf7a5eb722973b1b4a093379ff4d052c41",
+          "sha256_content": "sha256:789539e3b73544af5ea7d4008d39886d4adecac144d9a9d914965c7e6acaf21e",
           "generator": "LaTeXML oxide (version 0.7.6)"
         }
       },
@@ -872,7 +872,7 @@
           "fetched_at": "2026-09-05T20:47:14Z",
           "bytes": 237603,
           "sha256_raw": "sha256:50f4286b47bc4ad6000e3ae39a4532d1181109769df1b5185a7b953a64daed86",
-          "sha256_content": "sha256:c0fdff890e2eaa3579031dc2114e736751a433b05408f84b369d73478ab56da1",
+          "sha256_content": "sha256:cf96ef5cad3c4568a96b73d6cd9563ff11d4b3ef29f008da0d75f3860149d11a",
           "generator": "LaTeXML oxide (version 0.7.6)"
         }
       },
@@ -915,7 +915,7 @@
           "fetched_at": "2026-09-05T20:47:14Z",
           "bytes": 60821,
           "sha256_raw": "sha256:a17dff444e530699a4ad5324d666182912dce272ab98f3befb03b74f8add52f8",
-          "sha256_content": "sha256:0036050ad85d4fe75f20a9fc04ac561239d20a357168c81865ead4117f854862",
+          "sha256_content": "sha256:d63dab923e7c9e33bea50d093ae7200c2c7c064083a45e1ca761955e04ebee1e",
           "generator": "LaTeXML oxide (version 0.7.6)"
         }
       },

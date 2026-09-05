@@ -131,6 +131,13 @@ def extract_content_text(raw_html_text):
     inner = m.group(1)
     inner = re.sub(r"<script.*?</script>", " ", inner, flags=re.S | re.I)
     inner = re.sub(r"<style.*?</style>", " ", inner, flags=re.S | re.I)
+    # MathJax/LaTeXML renders each formula as visible glyphs (e.g. <mo>x</mo>)
+    # immediately followed by a hidden <annotation> holding the raw LaTeX
+    # source (e.g. "\times"). Browsers never display the annotation; stripping
+    # tags naively duplicates it right after the visible symbol ("2x\times"),
+    # which breaks verbatim cited_span matching against what a human reader
+    # actually sees. Drop annotations before generic tag-stripping.
+    inner = re.sub(r"<annotation\b.*?</annotation>", " ", inner, flags=re.S | re.I)
     text = TAG_RE.sub(" ", inner)
     text = html.unescape(text)
     text = re.sub(r"\r\n?", "\n", text)
