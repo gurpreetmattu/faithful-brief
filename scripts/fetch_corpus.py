@@ -141,7 +141,11 @@ def extract_content_text(raw_html_text):
     text = TAG_RE.sub(" ", inner)
     text = html.unescape(text)
     text = re.sub(r"\r\n?", "\n", text)
-    lines = [re.sub(r"[ \t]+", " ", ln).strip() for ln in text.split("\n")]
+    # \s (not just [ \t]) so non-breaking spaces and other unicode space
+    # separators -- e.g. &nbsp; before a citation bracket -- collapse to a
+    # plain space too, matching what a reader visually sees and would paste,
+    # rather than surviving as an invisible mismatch against a typed span.
+    lines = [re.sub(r"[^\S\n]+", " ", ln).strip() for ln in text.split("\n")]
     text = "\n".join(ln for ln in lines if ln != "")
     return text.strip()
 
