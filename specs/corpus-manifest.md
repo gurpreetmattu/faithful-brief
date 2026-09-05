@@ -73,13 +73,21 @@ bytes and the hash field would be decorative. Per CLAUDE.md, decorative componen
 ```json
 "selection_criteria": {
   "arxiv_categories": ["cs.CL", "cs.IR"],
-  "date_window": { "from": "2024-01-01", "to": "2026-08-31" },
+  "date_window": { "from": "2024-09-01", "to": "2026-08-31" },
   "query": "<the exact arXiv API query string used>",
   "queried_at": "<ISO datetime the search was run>",
   "inclusion_rules": ["<explicit, e.g. 'must present quantitative results'>"],
-  "exclusion_rules": ["<explicit, e.g. 'surveys excluded — no own results to cite'>"]
+  "exclusion_rules": ["<explicit, e.g. 'surveys excluded — no own results to cite'>"],
+  "max_anchors": 3,
+  "anchor_rule": "pre-window papers admissible only as anchors; each requires selection_note naming >=2 in-window papers that cite or contest it"
 }
 ```
+
+**Resolved:** categories are `cs.CL` + `cs.IR` — RAG's two home categories, wide enough to
+catch retrieval-method papers that in-window RAG papers argue with, without pulling in
+tangential cs.LG systems work. `date_window` is the trailing 24 months from freeze
+(`2024-09-01`–`2026-08-31`) — wide enough to span the self-RAG / GraphRAG / agentic-RAG
+generation without reaching back to techniques no longer representative of current practice.
 
 `queried_at` is recorded because arXiv search results change as papers are submitted.
 Without it the *paper set* is reproducible but the *search that produced it* is not, and a
@@ -89,6 +97,14 @@ Per-paper, `selection_note` (§5) records why that specific paper survived the f
 is the deliberate analogue of `label_rationale` in claim-schema §4: that field catches
 rubber-stamping, this one catches convenience-sampling. Both force a human to state a reason
 that a reviewer can disagree with.
+
+**Resolved: anchors.** The window holds strictly for the bulk of the corpus, with one
+capped exception. Disagreement detection (step 7) needs at least one paper old enough for
+in-window papers to actually disagree *with* — a strict window with no exceptions risks a
+corpus where everyone cites the same recent baseline and nobody contests anything older.
+Up to `max_anchors` pre-window papers are admissible, each gated by `is_anchor: true` (§5)
+and a `selection_note` naming which in-window papers cite or contest it — the same
+falsifiable-reason discipline as every other `selection_note`, not a blanket exemption.
 
 ---
 
@@ -110,6 +126,7 @@ Each element of `papers`:
 | `html_url` | string \| null | resolved URL; null iff `html_source == "none"` |
 | `artifacts` | object | `{ abstract: <artifact>, html: <artifact> \| null }` |
 | `selection_note` | string | one line: why this paper is in the frozen set |
+| `is_anchor` | bool | true iff `submitted_at` falls outside `date_window` (§4). Default `false`. |
 | `known_drift` | object \| null | null unless §6 drift has been triaged; see §6 |
 
 **Admissibility (INVARIANT 2).** Every entry MUST correspond to a real arXiv paper that
@@ -266,6 +283,20 @@ never be exercised. It stays in the enum because a fallback that is unrepresenta
 needed is worse than one that goes unused — but if step 2 finishes with zero `ar5iv` rows,
 say so and consider cutting the value.
 
+**Resolved: ar5iv eligibility for body spans.** An `ar5iv` body is equally eligible for
+body-level `cited_span`s as `arxiv_native`. Both are LaTeXML renderings of the same LaTeX
+source — there is no content-quality basis to disqualify one pipeline. `html_source`
+already records which one produced a given body (this table), so the distinction stays
+auditable without becoming a restriction.
+
+**Resolved: papers with `html_source == "none"`.** Admissible, not excluded — such a paper
+enters the corpus with `artifacts.html == null`, and its `cited_span`s are confined to its
+`abstract` artifact. Whether a given `perturbation_type` (e.g. `causal_inversion`) *requires*
+a body span is claim-schema's own open decision, not this file's — the manifest's job is
+only to allow the abstract-only case to exist and be labeled as such (§9.1's proposed
+`span_artifact` field is what would let claim-schema enforce a stricter rule if it adopts
+one), not to adjudicate which perturbation types need what.
+
 ---
 
 ## 9. Join to the claim schema
@@ -325,11 +356,13 @@ until step 2, and no real hash is claimed here.
   "paper_count": 1,
   "selection_criteria": {
     "arxiv_categories": ["cs.CL", "cs.IR"],
-    "date_window": { "from": "2024-01-01", "to": "2026-08-31" },
+    "date_window": { "from": "2024-09-01", "to": "2026-08-31" },
     "query": "<exact query string>",
     "queried_at": "2026-09-06T00:00:00Z",
     "inclusion_rules": ["presents quantitative results the paper itself owns"],
-    "exclusion_rules": ["surveys — no own results to cite"]
+    "exclusion_rules": ["surveys — no own results to cite"],
+    "max_anchors": 3,
+    "anchor_rule": "pre-window papers admissible only as anchors; each requires selection_note naming >=2 in-window papers that cite or contest it"
   },
   "corpus_hash": "sha256:<illustrative>",
   "papers": [
@@ -364,27 +397,40 @@ until step 2, and no real hash is claimed here.
           "generator": "LaTeXML oxide (version 0.7.6)"
         }
       },
-      "selection_note": "Foundational RAG paper; needed as an anchor the later papers argue with.",
+      "selection_note": "Foundational RAG paper; anchor — cited/contested by ≥2 in-window papers.",
+      "is_anchor": true,
       "known_drift": null
     }
   ]
 }
 ```
 
-Note: this example is a pre-2024 paper included against the stated `date_window` — exactly
-the kind of exception `selection_note` exists to make visible rather than invisible. Whether
-to actually grant it is an open decision below.
+Note: this example is a pre-window paper, admitted under the §4 anchor rule (`is_anchor:
+true`, `selection_note` names the >=2-in-window-citation justification) rather than as an
+exception to `date_window` — see §4/§12.
 
 ---
 
-## Open decisions (resolve before fetching)
+## 12. Resolved decisions (2026-09-06)
 
-- [ ] Final `paper_count` (15–20) and category filter — `cs.CL` only, or `+cs.IR`?
-- [ ] Date window for "recent."
-- [ ] Are pre-window foundational papers admissible as anchors (as in §11), or does the
-      window hold strictly? Affects whether disagreement detection (step 7) has anything
-      old enough to disagree *with*.
-- [ ] Whether an `ar5iv`-sourced body is eligible for body-level `cited_span`s
-      (couples to claim-schema's third open decision, and to §9.1's `span_artifact`).
-- [ ] Whether `abstract` alone is a sufficient artifact for any paper where
-      `html_source == "none"`, or whether such papers are excluded from the corpus outright.
+All decisions below are settled; none block fetching.
+
+- **`paper_count`**: not fixed to an exact number here. Target ~18 in-window papers
+  (CLAUDE.md's 15–20 range), determined by how many satisfy `inclusion_rules` within the
+  window — forcing an exact count before the search runs would just invite loosening
+  `inclusion_rules` to hit it. Up to `max_anchors` (3) anchors are additive, not counted
+  against this range — they're a structurally different kind of inclusion (§4).
+- **Categories**: `cs.CL` + `cs.IR` (§4).
+- **Date window**: `2024-09-01` to `2026-08-31`, trailing 24 months from freeze (§4).
+- **Anchors**: capped exception to the window, gated by `is_anchor` + a citation-count
+  `selection_note`, not a blanket carve-out (§4, §5).
+- **ar5iv eligibility for body spans**: eligible, same standing as `arxiv_native` (§8).
+- **`html_source == "none"` admissibility**: admitted, `cited_span`s confined to the
+  `abstract` artifact; per-perturbation-type body-span requirements remain claim-schema's
+  decision, not this file's (§8).
+
+## Open decisions (none — carried forward to later steps)
+
+- Claim-schema's own open decision on whether `causal_inversion` / `attribution_swap` rows
+  require a body-section span. Unaffected by anything resolved here; still claim-schema's
+  to settle, coupled to §9.1's proposed `span_artifact` field.
