@@ -177,6 +177,17 @@ def main():
     else:
         print("\nNo mismatches -- every verdict matched its ground-truth label.")
 
+    # CI gate (step 6, tier 2): recall is the number this project cannot tolerate
+    # regressing -- a drop means a real unfaithful claim slipped through. Precision
+    # is reported above but never gates: we've directly observed real run-to-run
+    # LLM variance on this exact eval (the same claim flipping between FN and TP
+    # across two runs earlier in this project's history), so a strict precision
+    # bar would make CI flaky for reasons unrelated to a real regression.
+    if recall < 1.0:
+        print(f"\nFAILED: recall {recall:.3f} < 1.000 -- a real unfaithful claim was missed.")
+        sys.exit(1)
+    sys.exit(0)
+
 
 if __name__ == "__main__":
     main()

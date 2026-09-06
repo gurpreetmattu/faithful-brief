@@ -1,0 +1,49 @@
+name: verifier-eval
+
+# Tier 2 of build-order step 6 (CLAUDE.md): the real 44-claim live eval against
+# data/claims.jsonl (specs/writer-verifier.md Sec 7 -- bypasses the Writer
+# entirely). Only runs when a PR touches the Writer/Verifier code or the specs/
+# ground-truth data it's measured against, or on manual dispatch -- not on
+# every PR, since it costs real API calls, takes minutes, and depends on
+# external providers that have been observed rate-limited or briefly down
+# during this project's own development.
+#
+# Gates on recall only (see eval_verifier.py's exit code): a regression below
+# 1.000 means a real unfaithful claim slipped through, which this job fails on.
+# Precision is printed in the job log but never gates -- real run-to-run LLM
+# variance has been directly observed on this exact eval.
+
+on:
+  pull_request:
+    paths:
+      - "scripts/verifier.py"
+      - "scripts/writer.py"
+      - "scripts/corpus_access.py"
+      - "scripts/schemas.py"
+      - "scripts/prompts.py"
+      - "scripts/llm_client.py"
+      - "scripts/eval_verifier.py"
+      - "specs/writer-verifier.md"
+      - "specs/claim-schema.md"
+      - "data/claims.jsonl"
+      - "data/corpus.v1.json"
+  workflow_dispatch: {}
+
+jobs:
+  verifier-eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run Verifier against all ground-truth claims
+        working-directory: scripts
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: python eval_verifier.py --reset

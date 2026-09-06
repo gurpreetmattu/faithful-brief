@@ -1,0 +1,28 @@
+name: fast-checks
+
+# Tier 1 of build-order step 6 (CLAUDE.md): deterministic, no LLM calls, no
+# secrets needed. Runs on every push/PR and always gates -- this is the cheap,
+# certain half of the tiered CI design; the live 44-claim eval (tier 2) lives in
+# verifier-eval.yml and only runs when it's actually relevant.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  fast-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Claim/corpus integrity check
+        working-directory: scripts
+        run: python check_claims_integrity.py
+
+      - name: Syntax/import sanity check
+        working-directory: scripts
+        run: python -m py_compile *.py

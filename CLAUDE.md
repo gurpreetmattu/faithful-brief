@@ -119,6 +119,23 @@ The single sentence this project exists to earn:
       (rate limits, and separately the host machine repeatedly running low on
       memory) never re-spent budget on already-evaluated claims.
 - [ ] 6. Evals into CI (gate merges) — only after step 5 numbers are locally stable
+      ← **CURRENT**: tiered design implemented and committed —
+      `.github/workflows/fast-checks.yml` (every push/PR, no LLM calls: schema
+      validation + mechanical `cited_span` re-verification via
+      `scripts/check_claims_integrity.py`, always gates) and
+      `.github/workflows/verifier-eval.yml` (only on changes touching
+      Writer/Verifier code, specs/, or the ground-truth data, plus manual
+      dispatch: the real 44-claim live eval, gates on recall only —
+      `scripts/eval_verifier.py` now exits 1 iff recall < 1.000, per the
+      run-to-run LLM variance observed this session; precision is reported, not
+      blocking). **Not yet actually gating anything**: no GitHub remote exists
+      for this repo yet, so the workflows are committed but have never run.
+      Manual steps still needed (outside this repo, cannot be automated from
+      here — no `gh` CLI in this environment): create the GitHub repo and push;
+      add `GROQ_API_KEY` / `GEMINI_API_KEY` / `OPENROUTER_API_KEY` / `HF_TOKEN`
+      as Actions secrets; enable branch protection on the default branch
+      requiring `fast-checks` (and, once comfortable with its noise, optionally
+      `verifier-eval`) as a required status check.
 - [ ] 7. Disagreement detection (needs its own labeled real-vs-apparent-conflict set)
 - [ ] 8. UI surfacing citations, disagreements, blocked-claims panel, trust receipt
 - [ ] 9. Stretch: retrieval-as-agent (+ arXiv MCP), recency-awareness, scope/decline gate
