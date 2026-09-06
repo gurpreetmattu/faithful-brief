@@ -1,0 +1,4 @@
+# No third-party HTTP/SDK dependencies -- scripts/llm_client.py calls Groq's
+# OpenAI-compatible API directly via the stdlib (urllib), matching
+# scripts/fetch_corpus.py's existing style. This file is a placeholder for when
+# a real dependency is needed.

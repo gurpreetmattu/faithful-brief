@@ -34,5 +34,6 @@ htmlcov/
 # The frozen corpus and ground-truth labels ARE committed (invariant 4: corpus is
 # versioned/pinned). Only transient caches and derived artifacts are ignored.
 data/cache/
+data/logs/
 data/**/*.tmp
 *.log

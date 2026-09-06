@@ -81,10 +81,19 @@ The single sentence this project exists to earn:
       "$\\text{GeAR}$") not present in the rendered page — worked around per-claim by
       pasting the verbatim cached text, not fixed at the source.
 - [ ] 4. Writer + Verifier (measured against the set from line one) ← **CURRENT**:
-      contract landed in `specs/writer-verifier.md` — isolated-context Verifier per
-      INVARIANT 5, three-check verdict (span-verified / cited-entailment /
-      corpus-entailment), Verifier independently callable against `data/claims.jsonl`
-      without a Writer call. No agent code written yet.
+      contract in `specs/writer-verifier.md`; code written in `scripts/` (`writer.py`,
+      `verifier.py`, `corpus_access.py`, `schemas.py`, `prompts.py`, `llm_client.py`,
+      `run_brief.py`). Two providers wired (Groq primary, Hugging Face fallback on
+      rate-limit or generation failure — Groq's free tier is tight enough that a real
+      run needs it); `call_log.jsonl` + optional Langfuse tracing per Sec 9.
+      Live-verified: `verify()` run standalone against 5 real `data/claims.jsonl` rows
+      (bypassing the Writer, per Sec 7) — every verdict matched the human label. One
+      full `run_brief.py` brief run end-to-end and correctly BLOCKED a real bad claim
+      (cited span didn't support the claim text, even though the same paper's
+      abstract elsewhere did — `not_entailed_elsewhere`). Not yet done: this was one
+      brief with one drafted claim (small-model + tight-budget output was thin);
+      step 5's actual precision/recall run against all 44 ground-truth claims hasn't
+      been done.
 - [ ] 5. Prove it — precision/recall on injected perturbations, per type
 - [ ] 6. Evals into CI (gate merges) — only after step 5 numbers are locally stable
 - [ ] 7. Disagreement detection (needs its own labeled real-vs-apparent-conflict set)
