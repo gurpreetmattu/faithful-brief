@@ -137,12 +137,20 @@ The single sentence this project exists to earn:
       requiring `fast-checks` (and, once comfortable with its noise, optionally
       `verifier-eval`) as a required status check.
 - [ ] 7. Disagreement detection (needs its own labeled real-vs-apparent-conflict set)
-      ← **CURRENT**: contract landed in `specs/disagreement-schema.md` — binary
-      `genuine`/`apparent` label (same no-partial discipline as claim-schema),
-      closed `apparent_reason` taxonomy, two real worked examples grounded in the
-      frozen corpus. No labeled set or detector code exists yet — next step is
-      the actual hand-labeling pass (human-labeled per INVARIANT 6, same
-      interactive workflow used for `data/claims.jsonl`), not code.
+      ← **CURRENT**: contract in `specs/disagreement-schema.md`. Labeling started
+      in `data/disagreements.jsonl`: **2/? pairs confirmed**, both `apparent`
+      (`pair-01`: different_scope; `pair-02`: methodological_difference), both
+      between `2404.16130v2` (GraphRAG) and `2502.11371v3` (RAG vs. GraphRAG) —
+      the richest genuine topical overlap found so far. Extensive search for a
+      **genuine** disagreement (shared-benchmark papers, Self-RAG baseline tables
+      across AssistRAG/CoRAG, "Why RAG Fails"'s graph terminology) has not yet
+      produced one — expected per the spec (real contradictions under identical
+      conditions are the rare case), but still an open gap: no `genuine` example
+      exists yet, so §3's taxonomy and §8's ratio/minimum-count decisions remain
+      unresolved until one is found. Paused mid-search, not finished — resume by
+      diversifying beyond the GraphRAG pair (all matches so far are the same two
+      papers) and/or reading full related-work sections by hand rather than
+      keyword search, which hit diminishing returns. No detector code yet.
 - [ ] 8. UI surfacing citations, disagreements, blocked-claims panel, trust receipt
 - [ ] 9. Stretch: retrieval-as-agent (+ arXiv MCP), recency-awareness, scope/decline gate
 
