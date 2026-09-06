@@ -94,7 +94,19 @@ The single sentence this project exists to earn:
       brief with one drafted claim (small-model + tight-budget output was thin);
       step 5's actual precision/recall run against all 44 ground-truth claims hasn't
       been done.
-- [ ] 5. Prove it — precision/recall on injected perturbations, per type
+- [ ] 5. Prove it — precision/recall on injected perturbations, per type ← **CURRENT**:
+      `scripts/eval_verifier.py` runs `verify()` (bypassing the Writer, per
+      writer-verifier.md Sec 7) against every row in `data/claims.jsonl`, checkpointed
+      to `data/logs/eval_checkpoint.jsonl` so a re-run never re-spends budget on
+      already-evaluated claims. Partial run so far: 18/44 claims — 16 correct, 1 FN
+      (`draft-11`, `entity_swap` — Verifier missed a 65.8%-HotPotQA-vs-NQ entity
+      swap), 1 FP (`claim-16` — a supported claim wrongly blocked). Blocked mid-run
+      by both free-tier providers running out simultaneously: Groq's shared
+      8000/min + 200,000/day org quota (already tight from step 4's debugging) and
+      Hugging Face's monthly free credit (hard `402`, not a rate limit — won't
+      reset until next month without paid credits). Resume with
+      `python scripts/eval_verifier.py` once budget is available; it picks up
+      automatically from the checkpoint.
 - [ ] 6. Evals into CI (gate merges) — only after step 5 numbers are locally stable
 - [ ] 7. Disagreement detection (needs its own labeled real-vs-apparent-conflict set)
 - [ ] 8. UI surfacing citations, disagreements, blocked-claims panel, trust receipt
