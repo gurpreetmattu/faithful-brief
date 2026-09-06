@@ -1,12 +1,12 @@
 """
-CLI: python scripts/run_brief.py "<research question>"
+CLI: python scripts/run_brief.py "<research question>" [--html out.html]
 
 Runs the Writer to draft claims, then the Verifier over each one independently
 (spec Sec 7), and prints the assembled brief (pass claims, spec Sec 6) and the
-blocked-claims log (block claims) as JSON to stdout.
-
-No file persistence here by design -- a durable brief format is step 8's UI concern,
-not this CLI's.
+blocked-claims log (block claims) as JSON to stdout -- always, unchanged from
+before. --html is additive: also render the step 8 report (generate_report.py)
+directly, so asking a question and getting a viewable report is one command
+instead of a JSON-then-convert two-step.
 """
 
 from __future__ import annotations
@@ -14,15 +14,23 @@ from __future__ import annotations
 import json
 import sys
 
+from generate_report import render_html
 from verifier import verify
 from writer import draft_brief
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("usage: python scripts/run_brief.py \"<research question>\"", file=sys.stderr)
+    html_path = None
+    argv = sys.argv[1:]
+    if "--html" in argv:
+        idx = argv.index("--html")
+        html_path = argv[idx + 1]
+        argv = argv[:idx] + argv[idx + 2:]
+
+    if len(argv) != 1:
+        print("usage: python scripts/run_brief.py \"<research question>\" [--html out.html]", file=sys.stderr)
         sys.exit(1)
-    question = sys.argv[1]
+    question = argv[0]
 
     draft_claims = draft_brief(question)
 
@@ -35,7 +43,18 @@ def main():
         else:
             blocked.append(result.to_dict())
 
-    print(json.dumps({"question": question, "brief": brief, "blocked": blocked}, indent=2, ensure_ascii=False))
+    result = {"question": question, "brief": brief, "blocked": blocked}
+    # ensure_ascii=True: paper-derived text can contain arbitrary Unicode (e.g.
+    # non-breaking hyphens), and this console's default stdout encoding
+    # (cp1252 on Windows) can't represent it directly. \uXXXX-escaped JSON is
+    # still valid JSON -- json.loads() decodes it transparently -- so this is
+    # the portable choice, not a workaround that loses information.
+    print(json.dumps(result, indent=2, ensure_ascii=True))
+
+    if html_path:
+        with open(html_path, "w", encoding="utf-8") as f:
+            f.write(render_html(result))
+        print(f"wrote {html_path}", file=sys.stderr)
 
 
 if __name__ == "__main__":

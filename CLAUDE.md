@@ -158,6 +158,22 @@ The single sentence this project exists to earn:
       turns up (or a deliberate decision is made to proceed without one). Paused
       at explicit user request, not finished. No detector code yet.
 - [ ] 8. UI surfacing citations, disagreements, blocked-claims panel, trust receipt
+      ← **CURRENT**: `scripts/generate_report.py` renders a self-contained
+      static HTML report from a `run_brief.py` result (no server/framework --
+      matches the project's dependency-light style). Three of four panels are
+      real: trust receipt (drafted/verified/blocked counts, per-`block_reason`
+      breakdown), citations (linked to arXiv, span shown verbatim), and blocked
+      claims (the demo money-shot — a real caught claim, verified end-to-end
+      against genuine Verifier output, not a fabricated fixture). Disagreements
+      is an honest "not yet available" placeholder — step 7 has no detector
+      yet — not fake data standing in for a feature that doesn't exist.
+      `run_brief.py --html out.html` renders the report directly in one
+      command. Also fixed two real bugs surfaced while testing this end-to-end:
+      `_wait_for_groq_budget` crashed on an empty history when a single call's
+      own estimated size exceeded the whole per-minute budget; `run_brief.py`'s
+      stdout JSON crashed on Unicode paper text under this console's cp1252
+      default (now `ensure_ascii=True`). Not yet done: disagreements panel
+      needs step 7's detector.
 - [ ] 9. Stretch: retrieval-as-agent (+ arXiv MCP), recency-awareness, scope/decline gate
 
 ## Not yet (premature — do not scaffold before the step that needs it)

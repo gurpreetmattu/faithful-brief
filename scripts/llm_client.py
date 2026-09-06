@@ -205,6 +205,15 @@ def _wait_for_groq_budget(estimated_tokens: int) -> None:
         if used + estimated_tokens <= _GROQ_TPM_BUDGET:
             _groq_call_history.append((now, estimated_tokens))
             return
+        if not _groq_call_history:
+            # This single call's own estimated size already exceeds the whole
+            # budget (can happen for a large Writer call) -- there is nothing
+            # queued to wait for, so waiting would loop forever. Proceed
+            # best-effort: this pacer is a proactive throttle, not a hard cap;
+            # Groq's real rate limit (and call_llm's retry/fallback) is still
+            # the actual enforcement if this guess runs over.
+            _groq_call_history.append((now, estimated_tokens))
+            return
         oldest_t = _groq_call_history[0][0]
         time.sleep(max(1.0, 60 - (now - oldest_t) + 1))
 
