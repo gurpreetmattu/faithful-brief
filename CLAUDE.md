@@ -137,19 +137,26 @@ The single sentence this project exists to earn:
       requiring `fast-checks` (and, once comfortable with its noise, optionally
       `verifier-eval`) as a required status check.
 - [ ] 7. Disagreement detection (needs its own labeled real-vs-apparent-conflict set)
-      ← **CURRENT**: contract in `specs/disagreement-schema.md`. Labeling started
-      in `data/disagreements.jsonl`: **3/? pairs confirmed, all `apparent`**
-      (`pair-01` `2404.16130v2`/`2502.11371v3`: different_scope; `pair-02` same
-      pair: methodological_difference; `pair-03` `2310.11511v1`/`2508.15253v2`
-      Self-RAG vs. CARE: different_scope). Two rounds of digging (keyword search,
-      then full related-work/intro reading by hand on CoRAG, CDF-RAG, CReSt,
-      MRAG, "In Defense of RAG") have not produced: a **genuine** example (the
-      rare case, expected per the spec), a `different_metric` example, a
-      `not_actually_related` example, or a third distinct paper pair beyond the
-      two found so far. §3's genuine-side taxonomy and §8's open decisions
-      (ratio, per-reason minimums) remain unresolved until more variety exists.
-      Paused mid-search twice now at explicit user request, not finished. No
-      detector code yet.
+      ← **CURRENT**: contract in `specs/disagreement-schema.md`. Labeling in
+      `data/disagreements.jsonl`: **5/? pairs confirmed, all `apparent`** —
+      every one of §3's four `apparent_reason` values now has a real example:
+      `pair-01`/`pair-02` (`2404.16130v2` GraphRAG vs `2502.11371v3` RAG-vs-
+      GraphRAG): different_scope, methodological_difference. `pair-03`
+      (`2310.11511v1` Self-RAG vs `2508.15253v2` CARE): different_scope.
+      `pair-04` (`2404.16130v2` vs `2605.14192v1` "Why RAG Fails"): a deliberate
+      not_actually_related negative example (both mention "graph," but one means
+      a knowledge graph and the other a mechanistic-interpretability attribution
+      graph). `pair-05` (`2310.11511v1` Self-RAG vs `2601.16503v2` MRAG):
+      different_metric (factuality/citations vs. readability).
+      **No `genuine` example found across three separate search passes**
+      (keyword search; full intro/related-work reading by hand on CoRAG,
+      CDF-RAG, CReSt, MRAG, "In Defense of RAG"; targeted metric/scope hunting).
+      Treating this as a real, honest finding rather than a gap to force-fill —
+      the spec expected genuine same-condition contradictions to be rare, and
+      they may simply not exist in this 21-paper corpus. §3's genuine-side
+      taxonomy and §8's ratio/per-reason-minimum decisions stay open until one
+      turns up (or a deliberate decision is made to proceed without one). Paused
+      at explicit user request, not finished. No detector code yet.
 - [ ] 8. UI surfacing citations, disagreements, blocked-claims panel, trust receipt
 - [ ] 9. Stretch: retrieval-as-agent (+ arXiv MCP), recency-awareness, scope/decline gate
 
