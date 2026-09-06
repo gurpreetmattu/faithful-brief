@@ -111,11 +111,31 @@ The gap between (a) and (b) is the misattribution signal, and it's a metric almo
 
 ---
 
-## Open decisions (resolve before step 3)
+## Resolved decisions
 
-- [ ] Confirm supported:unsupported ratio target (proposed ~60:40).
-- [ ] Fix per-type minimum counts so each `perturbation_type` has enough rows for a
-      meaningful per-type recall (a type with 2 rows yields a noise metric).
-- [ ] Decide whether abstract-only spans are acceptable for v1 `cited_span`, or whether
-      `causal_inversion`/`attribution_swap` rows require a body-section span. (Ties to the
-      known "abstracts overclaim" limitation.)
+Resolved 2026-09-06 against the real 40-row set in `data/claims.jsonl`, not in the
+abstract — same discipline as corpus-manifest.md §12.
+
+- **Supported:unsupported ratio.** Landed at 22:18 (~55:45), not the proposed 60:40.
+  Confirmed as fine: the proposal was a starting guess, not a target with a downstream
+  consumer. Precision is computed over supported rows and recall over unsupported rows
+  independently, so the split's exact ratio doesn't bias either metric — only each arm's
+  absolute count matters, and both arms are large enough to be non-noise.
+- **Per-type minimum count: 3.** A type with 2 rows yields a one-flip-changes-everything
+  metric (50pp swing). At 3, one flip is a ~33pp swing — still coarse, but the floor below
+  which a per-type number isn't worth reporting. Current unsupported-row counts by type:
+  entity_swap 4, scope_broadening 4, magnitude_change 3, causal_inversion 3,
+  attribution_swap 2, plausible_addition 2. **Two types (`attribution_swap`,
+  `plausible_addition`) are below the floor** — one more human-confirmed row needed in
+  each before step 3 can be marked done.
+- **Abstract-only spans: acceptable for all perturbation types, including
+  `causal_inversion`/`attribution_swap`.** Evidence from the real set: `draft-13` and
+  `claim-18` (causal_inversion) and `claim-28` (attribution_swap) all cite abstract spans
+  and labeled cleanly with no ambiguity about whether the span supports the claim; `draft-14`
+  (attribution_swap) cites an HTML-body span and labeled just as cleanly. The
+  "abstracts overclaim" risk this decision was meant to guard against is already handled by
+  the existing mechanism, not a new restriction: `label` asks only "does this span assert
+  this claim," so an overclaiming abstract just makes more claims `supported`-from-abstract,
+  which the schema already represents correctly via `span_artifact`. Restricting these two
+  types to body-only spans would have discarded real, correctly-labeled data for no
+  measurable gain.

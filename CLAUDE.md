@@ -66,17 +66,20 @@ The single sentence this project exists to earn:
       21 papers frozen in `data/corpus.v1.json` (18 in-window cs.CL/cs.IR 2024-09–2026-08,
       3 verified anchors), fetched via `scripts/fetch_corpus.py`. All 21 have `arxiv_native`
       HTML; abstract+HTML hashes verified against cache.
-- [ ] 3. Hand-build ground-truth claim set against the schema ← **CURRENT** (TARGET REACHED,
-      not yet marked done: 40/~40-50 claims confirmed in `data/claims.jsonl` — 22 supported,
-      18 unsupported (~55/45), every `perturbation_type` has ≥2 examples (entity_swap 4,
-      scope_broadening 4, magnitude_change 3, causal_inversion 3, attribution_swap 2,
-      plausible_addition 2), 18/21 corpus papers used. Every row was reviewed claim-by-claim
-      against its `cited_span` by the domain-competent human reviewer per INVARIANT 6; none
-      were LLM-labeled. Still open before checking this step done: claim-schema.md's own
-      per-type minimum-count and body-vs-abstract-span decisions (both now answerable from
-      real data in this set), and a known wrinkle where arXiv's abstract API field sometimes
-      preserves raw LaTeX escapes (e.g. "5.0\%") not present in the rendered page — worked
-      around per-claim so far, not fixed at the source.)
+- [x] 3. Hand-build ground-truth claim set against the schema — DONE: 44 claims confirmed in
+      `data/claims.jsonl` — 24 supported, 20 unsupported (~55/45), every `perturbation_type`
+      at or above the resolved floor of 3 (entity_swap 4, scope_broadening 4,
+      magnitude_change 3, causal_inversion 3, attribution_swap 3, plausible_addition 3),
+      20/21 corpus papers used. Every row was reviewed claim-by-claim against its
+      `cited_span` by the domain-competent human reviewer per INVARIANT 6; none were
+      LLM-labeled. All 42 non-null `cited_span`s mechanically re-verified verbatim against
+      the frozen corpus cache (the 2 null-span rows are deliberate: `plausible_addition`
+      claims with zero support anywhere in the source, confirmed by the human reviewer).
+      `claim-schema.md`'s per-type minimum-count and body-vs-abstract-span decisions are
+      resolved (see its "Resolved decisions" section). Known open wrinkle, not blocking:
+      arXiv's abstract API field sometimes preserves raw LaTeX escapes (e.g. "5.0\%",
+      "$\\text{GeAR}$") not present in the rendered page — worked around per-claim by
+      pasting the verbatim cached text, not fixed at the source.
 - [ ] 4. Writer + Verifier (measured against the set from line one)
 - [ ] 5. Prove it — precision/recall on injected perturbations, per type
 - [ ] 6. Evals into CI (gate merges) — only after step 5 numbers are locally stable
