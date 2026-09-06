@@ -98,15 +98,20 @@ The single sentence this project exists to earn:
       `scripts/eval_verifier.py` runs `verify()` (bypassing the Writer, per
       writer-verifier.md Sec 7) against every row in `data/claims.jsonl`, checkpointed
       to `data/logs/eval_checkpoint.jsonl` so a re-run never re-spends budget on
-      already-evaluated claims. Partial run so far: 18/44 claims — 16 correct, 1 FN
-      (`draft-11`, `entity_swap` — Verifier missed a 65.8%-HotPotQA-vs-NQ entity
-      swap), 1 FP (`claim-16` — a supported claim wrongly blocked). Blocked mid-run
-      by both free-tier providers running out simultaneously: Groq's shared
-      8000/min + 200,000/day org quota (already tight from step 4's debugging) and
-      Hugging Face's monthly free credit (hard `402`, not a rate limit — won't
-      reset until next month without paid credits). Resume with
-      `python scripts/eval_verifier.py` once budget is available; it picks up
-      automatically from the checkpoint.
+      already-evaluated claims; a resumed run also waits out a fixed 65s cool-down
+      first, since the self-imposed Groq pacer (`llm_client._wait_for_groq_budget`,
+      added after repeated TPM collisions) starts each process with empty history and
+      can't otherwise know a prior run's calls are still inside Groq's real window.
+      Partial run so far: **17/44 claims checkpointed** — all correct except one
+      known FP (`claim-16`, a supported claim wrongly blocked; an earlier attempt at
+      the same claim set also produced one FN on `draft-11`, `entity_swap`, showing
+      real run-to-run variance worth tracking once the eval is complete). Currently
+      blocked on Groq's **daily** quota specifically (confirmed via direct check:
+      `Used 198350/200000`, `Requested 5182`, next window opens in ~25min) — not the
+      per-minute one, which the new pacer already handles. Hugging Face's fallback
+      is separately out for the month (hard `402`). Resume with
+      `python scripts/eval_verifier.py` once Groq's daily budget has recovered
+      (safest: try again tomorrow); it picks up automatically from the checkpoint.
 - [ ] 6. Evals into CI (gate merges) — only after step 5 numbers are locally stable
 - [ ] 7. Disagreement detection (needs its own labeled real-vs-apparent-conflict set)
 - [ ] 8. UI surfacing citations, disagreements, blocked-claims panel, trust receipt

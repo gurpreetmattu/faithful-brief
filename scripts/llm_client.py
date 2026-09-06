@@ -154,6 +154,36 @@ def _trace_to_langfuse(role, provider, model, messages, response_message, usage,
         print(f"WARNING: Langfuse trace failed, continuing without it: {e}")
 
 
+# --- Self-imposed pacing (Groq only) ------------------------------------------------
+# Reactive retry-on-429 isn't enough here: a single corpus-wide entailment check
+# (Sec 5.3, all 21 abstracts) alone runs ~5-6k tokens against an 8000-token/minute
+# budget, so two such calls back-to-back always blow the window regardless of
+# retry logic, and the Hugging Face fallback's own free credit is too thin to
+# reliably absorb the overflow (observed depleting mid-eval-run more than once).
+# Tracking our own rolling token usage and waiting *before* an over-budget call is
+# strictly better than firing it and handling the rejection after the fact -- no
+# wasted request, no reliance on the fallback catching what Groq couldn't.
+_GROQ_TPM_BUDGET = 7500  # stay under Groq's real 8000 with a safety margin
+_groq_call_history = []  # list of (timestamp, estimated_tokens)
+
+
+def _estimate_tokens(payload: dict) -> int:
+    return len(json.dumps(payload)) // 4  # rough chars/4 estimate, good enough to pace by
+
+
+def _wait_for_groq_budget(estimated_tokens: int) -> None:
+    global _groq_call_history
+    while True:
+        now = time.monotonic()
+        _groq_call_history = [(t, n) for t, n in _groq_call_history if now - t < 60]
+        used = sum(n for _, n in _groq_call_history)
+        if used + estimated_tokens <= _GROQ_TPM_BUDGET:
+            _groq_call_history.append((now, estimated_tokens))
+            return
+        oldest_t = _groq_call_history[0][0]
+        time.sleep(max(1.0, 60 - (now - oldest_t) + 1))
+
+
 # --- Provider call -----------------------------------------------------------------
 
 
@@ -199,6 +229,9 @@ def call_llm(
             payload["tools"] = tools
         if tool_choice:
             payload["tool_choice"] = tool_choice
+
+        if provider["name"] == "groq":
+            _wait_for_groq_budget(_estimate_tokens(payload))
 
         start = time.monotonic()
         response = None

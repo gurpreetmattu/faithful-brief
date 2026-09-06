@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import json
 import sys
+import time
 from collections import defaultdict
 from pathlib import Path
 
@@ -85,6 +86,15 @@ def main():
     checkpoint = load_checkpoint()
     if checkpoint:
         print(f"Resuming: {len(checkpoint)} claims already checkpointed at {CHECKPOINT_PATH}", file=sys.stderr)
+        # A resumed run's self-imposed Groq pacer (llm_client._wait_for_groq_budget)
+        # starts with an empty in-memory history -- it has no way to know the
+        # previous process's last calls, seconds ago, may still be inside Groq's
+        # real 60s window. Replaying checkpointed rows costs nothing and takes no
+        # time, so without this wait the very first *new* call fires immediately
+        # into a window Groq's server still considers full. A fixed cool-down here
+        # is cheap insurance against repeating that exact failure on every resume.
+        print("Waiting 65s for any residual rate-limit window from a prior run to clear...", file=sys.stderr)
+        time.sleep(65)
 
     tp = fp = fn = tn = 0
     per_type = defaultdict(lambda: {"tp": 0, "fn": 0})
