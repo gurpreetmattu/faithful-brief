@@ -138,19 +138,18 @@ The single sentence this project exists to earn:
       `verifier-eval`) as a required status check.
 - [ ] 7. Disagreement detection (needs its own labeled real-vs-apparent-conflict set)
       ← **CURRENT**: contract in `specs/disagreement-schema.md`. Labeling started
-      in `data/disagreements.jsonl`: **2/? pairs confirmed**, both `apparent`
-      (`pair-01`: different_scope; `pair-02`: methodological_difference), both
-      between `2404.16130v2` (GraphRAG) and `2502.11371v3` (RAG vs. GraphRAG) —
-      the richest genuine topical overlap found so far. Extensive search for a
-      **genuine** disagreement (shared-benchmark papers, Self-RAG baseline tables
-      across AssistRAG/CoRAG, "Why RAG Fails"'s graph terminology) has not yet
-      produced one — expected per the spec (real contradictions under identical
-      conditions are the rare case), but still an open gap: no `genuine` example
-      exists yet, so §3's taxonomy and §8's ratio/minimum-count decisions remain
-      unresolved until one is found. Paused mid-search, not finished — resume by
-      diversifying beyond the GraphRAG pair (all matches so far are the same two
-      papers) and/or reading full related-work sections by hand rather than
-      keyword search, which hit diminishing returns. No detector code yet.
+      in `data/disagreements.jsonl`: **3/? pairs confirmed, all `apparent`**
+      (`pair-01` `2404.16130v2`/`2502.11371v3`: different_scope; `pair-02` same
+      pair: methodological_difference; `pair-03` `2310.11511v1`/`2508.15253v2`
+      Self-RAG vs. CARE: different_scope). Two rounds of digging (keyword search,
+      then full related-work/intro reading by hand on CoRAG, CDF-RAG, CReSt,
+      MRAG, "In Defense of RAG") have not produced: a **genuine** example (the
+      rare case, expected per the spec), a `different_metric` example, a
+      `not_actually_related` example, or a third distinct paper pair beyond the
+      two found so far. §3's genuine-side taxonomy and §8's open decisions
+      (ratio, per-reason minimums) remain unresolved until more variety exists.
+      Paused mid-search twice now at explicit user request, not finished. No
+      detector code yet.
 - [ ] 8. UI surfacing citations, disagreements, blocked-claims panel, trust receipt
 - [ ] 9. Stretch: retrieval-as-agent (+ arXiv MCP), recency-awareness, scope/decline gate
 
