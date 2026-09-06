@@ -94,24 +94,30 @@ The single sentence this project exists to earn:
       brief with one drafted claim (small-model + tight-budget output was thin);
       step 5's actual precision/recall run against all 44 ground-truth claims hasn't
       been done.
-- [ ] 5. Prove it — precision/recall on injected perturbations, per type ← **CURRENT**:
-      `scripts/eval_verifier.py` runs `verify()` (bypassing the Writer, per
-      writer-verifier.md Sec 7) against every row in `data/claims.jsonl`, checkpointed
-      to `data/logs/eval_checkpoint.jsonl` so a re-run never re-spends budget on
-      already-evaluated claims; a resumed run also waits out a fixed 65s cool-down
-      first, since the self-imposed Groq pacer (`llm_client._wait_for_groq_budget`,
-      added after repeated TPM collisions) starts each process with empty history and
-      can't otherwise know a prior run's calls are still inside Groq's real window.
-      Partial run so far: **17/44 claims checkpointed** — all correct except one
-      known FP (`claim-16`, a supported claim wrongly blocked; an earlier attempt at
-      the same claim set also produced one FN on `draft-11`, `entity_swap`, showing
-      real run-to-run variance worth tracking once the eval is complete). Currently
-      blocked on Groq's **daily** quota specifically (confirmed via direct check:
-      `Used 198350/200000`, `Requested 5182`, next window opens in ~25min) — not the
-      per-minute one, which the new pacer already handles. Hugging Face's fallback
-      is separately out for the month (hard `402`). Resume with
-      `python scripts/eval_verifier.py` once Groq's daily budget has recovered
-      (safest: try again tomorrow); it picks up automatically from the checkpoint.
+- [x] 5. Prove it — precision/recall on injected perturbations, per type — DONE:
+      full run of `scripts/eval_verifier.py` against all 44 rows in
+      `data/claims.jsonl`, `verify()` called directly (bypassing the Writer, per
+      writer-verifier.md Sec 7). **n=44, TP=20, FP=2, FN=0, TN=22 — accuracy 0.955,
+      precision 0.909, recall 1.000, f1 0.952. Recall is 100% in every one of the
+      six `perturbation_type`s** (attribution_swap 3/3, causal_inversion 3/3,
+      entity_swap 4/4, magnitude_change 3/3, plausible_addition 3/3,
+      scope_broadening 4/4) — the Verifier missed zero unfaithful claims. The 2 FPs
+      (`claim-16`, `claim-33`) are both cases where the cited span cleanly supports
+      the claim and the Verifier wrongly blocked it anyway — a real miss, not a
+      labeling ambiguity, and a defensible failure direction for a faithfulness
+      checker (over-cautious rather than permissive).
+      Getting here required real infrastructure work, not just running a script:
+      Groq's free tier (8000 tok/min + 200,000 tok/day) turned out to be a
+      per-*organization* pool shared across all 13 `GROQ_API_KEY_N` values (same
+      org ID in every response — confirmed live, including a side-by-side
+      rate-limit-header dump across all 13 keys), so key rotation bought nothing;
+      Hugging Face's monthly free credit ran out mid-eval and didn't reliably
+      recover; added Gemini and OpenRouter as genuinely independent-quota
+      fallbacks (`llm_client.py`, four providers in order: groq → gemini →
+      openrouter → huggingface) plus a self-imposed per-minute pacer for Groq and
+      a `data/logs/eval_checkpoint.jsonl` checkpoint so repeated interruptions
+      (rate limits, and separately the host machine repeatedly running low on
+      memory) never re-spent budget on already-evaluated claims.
 - [ ] 6. Evals into CI (gate merges) — only after step 5 numbers are locally stable
 - [ ] 7. Disagreement detection (needs its own labeled real-vs-apparent-conflict set)
 - [ ] 8. UI surfacing citations, disagreements, blocked-claims panel, trust receipt

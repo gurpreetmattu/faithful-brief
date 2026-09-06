@@ -280,9 +280,24 @@ def call_llm(
         if response is None:
             continue  # this provider failed; try the next
 
+        message = response["choices"][0]["message"]
+        # A forced tool_choice can come back as HTTP 200 with no tool_calls at all
+        # -- observed with OpenRouter's nemotron-3-super-120b, which burned its
+        # whole max_tokens budget on visible chain-of-thought reasoning and never
+        # reached the actual function call. That's not an HTTPError, so it never
+        # hit the except block above, and get_tool_call() would otherwise raise
+        # outside this function's retry/fallback loop entirely -- crashing the
+        # caller instead of trying the next provider. Treat it the same as any
+        # other per-provider failure here, before returning.
+        if tool_choice and not message.get("tool_calls"):
+            last_err = RuntimeError(
+                f"{provider['name']} returned no tool_calls despite forced tool_choice "
+                f"(likely ran out of max_tokens mid-reasoning): {message!r}"
+            )
+            continue
+
         latency_ms = (time.monotonic() - start) * 1000
         usage = response.get("usage", {})
-        message = response["choices"][0]["message"]
 
         _append_log(
             {
