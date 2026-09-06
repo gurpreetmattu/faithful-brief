@@ -80,7 +80,11 @@ The single sentence this project exists to earn:
       arXiv's abstract API field sometimes preserves raw LaTeX escapes (e.g. "5.0\%",
       "$\\text{GeAR}$") not present in the rendered page — worked around per-claim by
       pasting the verbatim cached text, not fixed at the source.
-- [ ] 4. Writer + Verifier (measured against the set from line one)
+- [ ] 4. Writer + Verifier (measured against the set from line one) ← **CURRENT**:
+      contract landed in `specs/writer-verifier.md` — isolated-context Verifier per
+      INVARIANT 5, three-check verdict (span-verified / cited-entailment /
+      corpus-entailment), Verifier independently callable against `data/claims.jsonl`
+      without a Writer call. No agent code written yet.
 - [ ] 5. Prove it — precision/recall on injected perturbations, per type
 - [ ] 6. Evals into CI (gate merges) — only after step 5 numbers are locally stable
 - [ ] 7. Disagreement detection (needs its own labeled real-vs-apparent-conflict set)
