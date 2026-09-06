@@ -137,6 +137,12 @@ The single sentence this project exists to earn:
       requiring `fast-checks` (and, once comfortable with its noise, optionally
       `verifier-eval`) as a required status check.
 - [ ] 7. Disagreement detection (needs its own labeled real-vs-apparent-conflict set)
+      ← **CURRENT**: contract landed in `specs/disagreement-schema.md` — binary
+      `genuine`/`apparent` label (same no-partial discipline as claim-schema),
+      closed `apparent_reason` taxonomy, two real worked examples grounded in the
+      frozen corpus. No labeled set or detector code exists yet — next step is
+      the actual hand-labeling pass (human-labeled per INVARIANT 6, same
+      interactive workflow used for `data/claims.jsonl`), not code.
 - [ ] 8. UI surfacing citations, disagreements, blocked-claims panel, trust receipt
 - [ ] 9. Stretch: retrieval-as-agent (+ arXiv MCP), recency-awareness, scope/decline gate
 
