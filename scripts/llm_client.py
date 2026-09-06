@@ -1,20 +1,22 @@
 """
 Shared LLM call wrapper for writer.py and verifier.py.
 
-Primary provider: Groq's OpenAI-compatible chat completions API. Fallback: Hugging
-Face's OpenAI-compatible router (https://router.huggingface.co), used only when Groq
-returns a rate-limit response. This is a genuinely separate quota, unlike Groq's own
-GROQ_API_KEY_2..13 -- a live check (2026-09-06) showed every one of those reports the
-same "organization" ID in its error responses, so they share one 8000-token/minute
-and 200,000-token/day budget, not independent ones. Key rotation across them was
-tried and removed; it bought nothing. HF is a different provider with its own quota,
-so it's a real fallback, not the same trick in a different hat.
+Four providers, tried in order (see _PROVIDERS below): Groq, Gemini, OpenRouter,
+Hugging Face -- all OpenAI-compatible chat-completions APIs. A live check
+(2026-09-06) showed Groq's own GROQ_API_KEY_2..13 all report the same
+"organization" ID in their error responses, so they share one 8000-token/minute
+and 200,000-token/day budget, not independent ones -- key rotation across them was
+tried and removed, it bought nothing. Gemini and OpenRouter were added the same
+day specifically because they're genuinely separate quotas (different companies,
+different accounts), not another key on the same pool. HF's free monthly credit
+was also observed fully depleted mid-session, hence it's last in the order rather
+than removed -- it may recover next month.
 
-Both providers speak the same OpenAI-style chat-completions + tool-calling format, so
-one function (call_llm) builds one payload and just changes the endpoint/key/model on
-fallback -- no separate code path, no gateway framework (CLAUDE.md's not-yet list
-names "LLM gateway" explicitly; this is a two-provider fallback in a plain function,
-not that).
+All four providers speak the same OpenAI-style chat-completions + tool-calling
+format, so one function (call_llm) builds one payload and just changes the
+endpoint/key/model on fallback -- no separate code path, no gateway framework
+(CLAUDE.md's not-yet list names "LLM gateway" explicitly; this is a plain
+in-order fallback loop, not that).
 
 Plain urllib, no HTTP SDK dependency -- matches fetch_corpus.py's existing style.
 call_llm() is used by both agents so there is exactly one place that (a) emits the
@@ -23,9 +25,9 @@ Langfuse if configured, and (c) can never accidentally thread state between call
 each call is a fresh, independent HTTP request; no client-side conversation object is
 reused across calls.
 
-Note: both Groq and HF's routers return odd errors to requests with no User-Agent
+Note: Groq's and HF's routers return odd errors to requests with no User-Agent
 header (Groq: a bare 403, Cloudflare code 1010) -- not an auth error. UA is set
-explicitly below.
+explicitly below for all providers as a precaution.
 """
 
 from __future__ import annotations
@@ -73,16 +75,39 @@ UA = {"User-Agent": "faithful-brief-agents/0.1 (research; contact via repo)"}
 # by model choice.
 GROQ_MODEL = os.environ.get("AGENT_MODEL_GROQ", "openai/gpt-oss-20b")
 HF_MODEL = os.environ.get("AGENT_MODEL_HF", "meta-llama/Llama-3.3-70B-Instruct")
+GEMINI_MODEL = os.environ.get("AGENT_MODEL_GEMINI", "gemini-3.6-flash")
+OPENROUTER_MODEL = os.environ.get("AGENT_MODEL_OPENROUTER", "nvidia/nemotron-3-super-120b-a12b:free")
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 HF_TOKEN = os.environ.get("HF_TOKEN")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 
+# Order matters: cheapest/most-proven-reliable first, since call_llm() below tries
+# each in turn and only falls through on failure. Groq first (fastest, already
+# proven correct); Gemini and OpenRouter next (added 2026-09-06 specifically
+# because Groq's shared daily quota and HF's shared monthly credit both being
+# per-organization pools -- not per-key -- meant no amount of extra Groq/HF keys
+# could add real capacity; these two are genuinely independent quotas); HF last
+# since its free monthly credit was already observed depleted this session.
 _PROVIDERS = [
     {
         "name": "groq",
         "url": "https://api.groq.com/openai/v1/chat/completions",
         "key": GROQ_API_KEY,
         "model": GROQ_MODEL,
+    },
+    {
+        "name": "gemini",
+        "url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+        "key": GEMINI_API_KEY,
+        "model": GEMINI_MODEL,
+    },
+    {
+        "name": "openrouter",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "key": OPENROUTER_API_KEY,
+        "model": OPENROUTER_MODEL,
     },
     {
         "name": "huggingface",
@@ -210,7 +235,7 @@ def call_llm(
     logging/tracing -- it has no effect on the request and carries no state from
     any other call.
 
-    Tries each configured provider in order (Groq, then Hugging Face). Moves to
+    Tries each configured provider in order (see _PROVIDERS). Moves to
     the next provider on a rate-limit response (after retrying once with a wait)
     or on any other request failure (e.g. a model failing to honor a forced tool
     call under a large-context request -- observed with gpt-oss-20b) -- a
