@@ -132,6 +132,14 @@ _ROTATING_PROVIDERS = [
         "name": "openrouter",
         "url": "https://openrouter.ai/api/v1/chat/completions",
         "key": OPENROUTER_API_KEY,
+        # nemotron-3-super-120b (the free model) visibly "thinks out loud"
+        # before calling the forced tool, and 1200 tokens (the default,
+        # chosen to stay under Groq's tight per-minute budget) isn't enough
+        # room for both the reasoning and the actual tool call -- confirmed
+        # live in CI, 2026-09-07: it burned all 1200 tokens on reasoning text
+        # and never reached tool_calls. OpenRouter has no comparable per-
+        # minute constraint, so it can afford a much larger budget.
+        "max_tokens": 4000,
         "model": OPENROUTER_MODEL,
     },
 ]
@@ -319,7 +327,12 @@ def call_llm(
 
     last_err = None
     for provider in available:
-        payload = {"model": provider["model"], "messages": messages, "max_tokens": max_tokens}
+        # A provider can override the caller's max_tokens (see OpenRouter's
+        # entry in _ROTATING_PROVIDERS) when it structurally needs more room
+        # than the shared default, which exists mainly to keep Groq under its
+        # own tight per-minute budget.
+        provider_max_tokens = provider.get("max_tokens", max_tokens)
+        payload = {"model": provider["model"], "messages": messages, "max_tokens": provider_max_tokens}
         if tools:
             payload["tools"] = tools
         if tool_choice:
