@@ -1,17 +1,19 @@
 """
 Shared LLM call wrapper for writer.py and verifier.py.
 
-Four providers -- Groq, Gemini, OpenRouter, Hugging Face -- all OpenAI-compatible
-chat-completions APIs. Groq/OpenRouter are round-robin ROTATED per call (see
+Four providers wired -- Groq, Gemini, OpenRouter, Hugging Face -- all
+OpenAI-compatible chat-completions APIs, but only two are actually enabled
+right now: Groq/OpenRouter are round-robin ROTATED per call (see
 _ROTATING_PROVIDERS / _rotating_order() below) -- genuinely independent
-quotas with real headroom. Gemini/HF are LAST-RESORT ONLY (see
-_LAST_RESORT_PROVIDERS), each excluded from rotation for its own confirmed
-hard cap, not a transient rate limit: Gemini's only current (non-retired)
-model caps at 20 requests/DAY on the free tier (real 429, confirmed live in
-CI, 2026-09-07); HF's free monthly credit is fully depleted (real 402).
-Rotating either of those in would proactively burn a tiny, already-scarce
-budget on every call instead of only occasionally, when the two real
-rotating providers both fail for one call.
+quotas with real headroom. Gemini and HF are both fully DISABLED (see
+_LAST_RESORT_PROVIDERS, commented out), each for its own confirmed hard cap:
+Gemini's only current (non-retired) model caps at 20 requests/DAY on the
+free tier (real 429, confirmed live in CI, 2026-09-07) -- so tight that even
+this debugging session's own traffic exhausted it, so it's not safe even as
+an occasional last resort right now; HF's free monthly credit is fully
+depleted (real 402). Both are worse than useless while capped: a guaranteed
+failure becomes call_llm()'s reported error whenever reached, masking
+whatever the real Groq/OpenRouter issue was for that call.
 
 A live check (2026-09-06) showed Groq's own GROQ_API_KEY_2..13 all report
 the same "organization" ID in their error responses, so they share one
@@ -134,26 +136,26 @@ _ROTATING_PROVIDERS = [
     },
 ]
 
-# Gemini and HF are LAST-RESORT ONLY, not rotated, both for hard-cap reasons
-# confirmed live in CI (2026-09-07):
+# Both Gemini and HF are DISABLED (commented out, not removed) as of
+# 2026-09-07 -- both hit hard caps confirmed live in CI, and both are worse
+# than useless while capped: a guaranteed failure becomes the reported error
+# whenever reached, masking whatever the real Groq/OpenRouter issue was.
 # - Gemini (gemini-3.6-flash, the only current non-retired model): free tier
-#   caps at 20 requests/DAY -- real 429, "GenerateRequestsPerDayPerProjectPer
-#   Model-FreeTier ... quotaValue: 20". Rotating it in exhausts that budget
-#   within the eval's first ~9 claims; kept as an occasional last resort
-#   since 20/day isn't literally zero.
-# - HF: free monthly credit confirmed fully depleted (real 402). A hard
-#   monthly cap doesn't recover from a retry the way a per-minute limit
-#   does, and keeping it in the chain was actively counterproductive: its
-#   guaranteed 402 became the reported error whenever reached, masking
-#   whatever the real Gemini/OpenRouter failure was. Commented out rather
-#   than removed -- trivial to re-enable once its credit resets.
+#   caps at 20 requests/DAY (real 429, "GenerateRequestsPerDayPerProjectPer
+#   Model-FreeTier ... quotaValue: 20"). Tried as an occasional last-resort
+#   first, not rotated -- even that wasn't safe: this debugging session's own
+#   traffic (earlier rotation attempts, direct test calls) burned through the
+#   20/day budget on its own, so "last resort" still hit the same 429.
+# - HF: free monthly credit confirmed fully depleted (real 402), a hard cap
+#   that doesn't recover from a retry the way a per-minute limit does.
+# Re-enable either by uncommenting once its quota/credit resets.
 _LAST_RESORT_PROVIDERS = [
-    {
-        "name": "gemini",
-        "url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-        "key": GEMINI_API_KEY,
-        "model": GEMINI_MODEL,
-    },
+    # {
+    #     "name": "gemini",
+    #     "url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+    #     "key": GEMINI_API_KEY,
+    #     "model": GEMINI_MODEL,
+    # },
     # {
     #     "name": "huggingface",
     #     "url": "https://router.huggingface.co/v1/chat/completions",
