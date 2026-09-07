@@ -223,7 +223,41 @@ The single sentence this project exists to earn:
       match/mismatch pills all render correctly in dark theme; zero external
       network references confirmed both by grep and by the browser not
       fetching anything off-origin.
-- [ ] 9. Stretch: retrieval-as-agent (+ arXiv MCP), recency-awareness, scope/decline gate
+- [ ] 9. Stretch: retrieval-as-agent (+ arXiv MCP), recency-awareness, scope/
+      decline gate ← **CURRENT, partial**: scope/decline gate done, the other
+      two sub-items not started (each is independently optional, per this
+      line's own "Stretch" framing).
+
+      **Scope/decline gate — DONE**: `specs/scope-gate.md` (binary
+      `in_scope`/`decline`, `decline_reason ∈ {off_topic, out_of_corpus}`,
+      same discipline as claim-schema/disagreement-schema). Ground truth in
+      `data/scope_gate.jsonl` — 10 rows, 5 `in_scope` (each tied to a real
+      corpus paper: GraphRAG, Self-RAG, CARE, RAGO, MRAG), 5 `decline` (3
+      `off_topic`, 2 `out_of_corpus`), human-confirmed per INVARIANT 6.
+      `scripts/scope_gate.py`'s `classify_scope()` mirrors `verify()`'s pure-
+      function isolation (writer-verifier.md Sec 7): no Writer/Verifier state,
+      runs against `corpus_access.all_abstracts()`. `scripts/eval_scope_gate.py`
+      run live against all 10 real rows: **n=10, TP=4 FP=0 FN=1 TN=5 —
+      accuracy=0.900, precision=1.000, recall=0.800**. One real miss:
+      `sg-10` ("best practices for RAG in production at multi-billion-user
+      scale") called `in_scope` when it should `decline`/`out_of_corpus` — a
+      defensible borderline case (RAGO's serving-optimization content is
+      genuinely adjacent), and the safer-direction error per this gate's own
+      priority (a missed decline just means the pipeline runs anyway and
+      likely comes back mostly blocked; a wrongly-declined real question is
+      the more costly failure, and that never happened here: 0 FP).
+
+      Wired into `run_brief.py`: `classify_scope()` runs before any Writer
+      call; on `decline`, the brief short-circuits (`declined: true`,
+      `decline_reason`, `scope_rationale` in the JSON output, no Writer/
+      Verifier call spent) instead of silently running the full pipeline down
+      to a misleading empty/all-blocked brief. `generate_report.py` renders an
+      honest declined-state page in that case rather than a 0/0/0 trust
+      receipt that would look like an ordinary failure. Live-verified
+      end-to-end: a real off-topic question through `run_brief.py --html`
+      correctly declined with no Writer/Verifier call, and the rendered HTML
+      showed the decline reason and rationale plainly (zero external network
+      references, same as every other report path).
 
 ## Not yet (premature — do not scaffold before the step that needs it)
 

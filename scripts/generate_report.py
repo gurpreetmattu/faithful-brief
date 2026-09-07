@@ -223,8 +223,41 @@ def _disagreements_panel() -> str:
     return caveat + rows_html
 
 
+def _declined_html(question: str, result: dict) -> str:
+    # Step 9's scope gate short-circuited before any Writer/Verifier call --
+    # render that plainly instead of falling through to the normal report,
+    # which would otherwise show an honest-looking but misleading 0/0/0 trust
+    # receipt (indistinguishable from "we tried and found nothing").
+    reason = result.get("decline_reason") or "unknown"
+    rationale = result.get("scope_rationale") or ""
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Faithful Brief Report</title>
+<style>{_STYLE}</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Faithful Brief</h1>
+  <p class="question">{_esc(question)}</p>
+  <div class="card">
+    <span class="reason">declined: {_esc(reason)}</span>
+    <p style="margin-top:10px;">This question was declined by the scope gate
+    (<code>specs/scope-gate.md</code>) before any Writer or Verifier call was
+    made -- no brief was attempted.</p>
+    <p class="receipt-note">{_esc(rationale)}</p>
+  </div>
+</div>
+</body>
+</html>
+"""
+
+
 def render_html(result: dict) -> str:
     question = result.get("question", "")
+    if result.get("declined"):
+        return _declined_html(question, result)
     brief = result.get("brief", [])
     blocked = result.get("blocked", [])
     total = len(brief) + len(blocked)

@@ -125,6 +125,30 @@ class DisagreementVerdict:
         return d
 
 
+DECLINE_REASONS = {"off_topic", "out_of_corpus"}
+
+
+@dataclass
+class ScopeVerdict:
+    question: str
+    label: str  # "in_scope" | "decline"
+    decline_reason: Optional[str] = None  # one of DECLINE_REASONS, or None iff label == in_scope
+    rationale: str = ""
+
+    def __post_init__(self):
+        if self.label not in ("in_scope", "decline"):
+            raise ValueError(f"label must be 'in_scope' or 'decline', got {self.label!r}")
+        if self.label == "in_scope" and self.decline_reason is not None:
+            raise ValueError("an in_scope label must not carry a decline_reason")
+        if self.label == "decline" and self.decline_reason not in DECLINE_REASONS:
+            raise ValueError(
+                f"decline label needs decline_reason in {DECLINE_REASONS}, got {self.decline_reason!r}"
+            )
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+
 @dataclass
 class CallLog:
     role: str  # "writer" | "verifier"
