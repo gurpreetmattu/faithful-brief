@@ -157,15 +157,39 @@ The single sentence this project exists to earn:
       a knowledge graph and the other a mechanistic-interpretability attribution
       graph). `pair-05` (`2310.11511v1` Self-RAG vs `2601.16503v2` MRAG):
       different_metric (factuality/citations vs. readability).
-      **No `genuine` example found across three separate search passes**
+      **No `genuine` example found across four separate search passes**
       (keyword search; full intro/related-work reading by hand on CoRAG,
-      CDF-RAG, CReSt, MRAG, "In Defense of RAG"; targeted metric/scope hunting).
-      Treating this as a real, honest finding rather than a gap to force-fill —
-      the spec expected genuine same-condition contradictions to be rare, and
-      they may simply not exist in this 21-paper corpus. §3's genuine-side
-      taxonomy and §8's ratio/per-reason-minimum decisions stay open until one
-      turns up (or a deliberate decision is made to proceed without one). Paused
-      at explicit user request, not finished. No detector code yet.
+      CDF-RAG, CReSt, MRAG, "In Defense of RAG"; targeted metric/scope hunting;
+      benchmark/baseline-table cross-referencing, e.g. Self-RAG's numbers as a
+      reproduced baseline in AssistRAG's results table). Treating this as a
+      real, honest finding rather than a gap to force-fill — the spec expected
+      genuine same-condition contradictions to be rare, and they may simply not
+      exist in this 21-paper corpus. §3's genuine-side taxonomy and §8's
+      ratio/per-reason-minimum decisions stay open until one turns up.
+
+      Detector built anyway (user's explicit call after the 4th failed
+      search): `scripts/disagreement_detector.py`'s `classify()` is a pure
+      function of a `DisagreementCandidate` -> `DisagreementVerdict`, mirroring
+      `verify()`'s Sec 7 isolation discipline. `scripts/eval_disagreement.py`
+      run live against all 5 real rows in `data/disagreements.jsonl` (no
+      fixture/mocked run): **label_accuracy 4/5 (0.800), apparent_reason
+      accuracy 2/5 (0.400)**. One concerning real miss: `pair-03` (Self-RAG vs
+      CARE) was classified `genuine` when it's actually `apparent`/
+      `different_scope` — the detector wrongly escalating an apparent
+      disagreement to genuine is exactly the "cries wolf" failure direction
+      disagreement-schema.md §1 warns a bad detector produces. Two softer
+      misses (`pair-02`, `pair-04`) got the binary `label` right but the wrong
+      `apparent_reason`. **Not tuned** — this is the first real run, reported
+      as-is per the "shipped, not demoed" standard rather than iterated on to
+      chase a better number on an n=5 set.
+
+      **Standing limitation, load-bearing, not a formality**: this detector's
+      recall on `genuine` disagreements is UNMEASURED — zero exist in the eval
+      set, so a detector hardcoded to always answer `apparent` would score
+      exactly as well here. `eval_disagreement.py` prints this warning on
+      every run and deliberately never sets a CI exit-code gate (unlike
+      `eval_verifier.py`'s recall gate) — gating on an eval set with a known,
+      unfilled gap would be false rigor.
 - [ ] 8. UI surfacing citations, disagreements, blocked-claims panel, trust receipt
       ← **CURRENT**: `scripts/generate_report.py` renders a self-contained
       static HTML report from a `run_brief.py` result (no server/framework --

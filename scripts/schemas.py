@@ -64,6 +64,67 @@ class Verdict:
         return d
 
 
+# disagreement-schema.md Sec 3's closed taxonomy.
+APPARENT_REASONS = {
+    "different_scope",
+    "different_metric",
+    "methodological_difference",
+    "not_actually_related",
+}
+
+
+@dataclass
+class DisagreementCandidate:
+    """
+    One row of disagreement-schema.md Sec 4: a pair of spans from two different
+    corpus papers, both bearing on the same underlying question. Candidate
+    generation (finding which pairs to compare) is out of scope per spec Sec 1 --
+    this is just the classification unit, human-identified today.
+    """
+
+    paper_a_id: str
+    paper_b_id: str
+    topic: str
+    span_a: str
+    span_b: str
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    @staticmethod
+    def from_dict(d: dict) -> "DisagreementCandidate":
+        return DisagreementCandidate(
+            paper_a_id=d["paper_a_id"],
+            paper_b_id=d["paper_b_id"],
+            topic=d["topic"],
+            span_a=d["span_a"],
+            span_b=d["span_b"],
+        )
+
+
+@dataclass
+class DisagreementVerdict:
+    candidate: DisagreementCandidate
+    label: str  # "genuine" | "apparent"
+    apparent_reason: Optional[str] = None  # one of APPARENT_REASONS, or None iff label == genuine
+    rationale: str = ""
+
+    def __post_init__(self):
+        if self.label not in ("genuine", "apparent"):
+            raise ValueError(f"label must be 'genuine' or 'apparent', got {self.label!r}")
+        if self.label == "genuine" and self.apparent_reason is not None:
+            raise ValueError("a genuine label must not carry an apparent_reason")
+        if self.label == "apparent" and self.apparent_reason not in APPARENT_REASONS:
+            raise ValueError(
+                f"apparent label needs apparent_reason in {APPARENT_REASONS}, got {self.apparent_reason!r}"
+            )
+
+    def to_dict(self) -> dict:
+        d = asdict(self)
+        d["candidate"] = self.candidate.to_dict()
+        return d
+
+
 @dataclass
 class CallLog:
     role: str  # "writer" | "verifier"
