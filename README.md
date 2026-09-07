@@ -21,7 +21,7 @@ it is a projection or a cherry-picked example.
 | **Scope gate** (decline out-of-scope questions) | n=10, accuracy=0.900, precision=1.000, recall=0.800 |
 | **Disagreement detector** (genuine vs. apparent) | n=5, first real run: label accuracy 0.6–0.8 (run-to-run LLM variance observed); **0 `genuine` examples exist in the ground-truth set** after 4 independent search passes across the corpus — recall on a real genuine disagreement is honestly unmeasured, not silently assumed |
 
-The Verifier's recall gates CI (`.github/workflows/verifier-eval.yml`) — a regression below
+The Verifier's recall gates CI (`.github/workflows/verifier-eval-live.yml`) — a regression below
 1.000 fails the build. See `CLAUDE.md` for full numbers, methodology, and every real bug
 found along the way.
 

@@ -122,7 +122,7 @@ The single sentence this project exists to earn:
       and live-gating. `.github/workflows/fast-checks.yml` (every push/PR, no
       LLM calls: schema validation + mechanical `cited_span` re-verification
       via `scripts/check_claims_integrity.py`, always gates) and
-      `.github/workflows/verifier-eval.yml` (only on changes touching
+      `.github/workflows/verifier-eval-live.yml` (only on changes touching
       Writer/Verifier code, specs/, or the ground-truth data, plus manual
       dispatch: the real 44-claim live eval, gates on recall only —
       `scripts/eval_verifier.py` exits 1 iff recall < 1.000, per the run-to-run

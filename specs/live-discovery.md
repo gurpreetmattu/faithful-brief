@@ -71,7 +71,7 @@ skipping ground truth/eval — mechanical, not a classifier.
 Runs on a real network call — no live-corpus test can be part of CI's
 `fast-checks` (no LLM key needed, but a real network dependency doesn't
 belong in a job that's supposed to be free/deterministic/offline). Not wired
-into `verifier-eval.yml` either, since there's nothing to eval.
+into `verifier-eval-live.yml` either, since there's nothing to eval.
 
 ---
 
