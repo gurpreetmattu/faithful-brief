@@ -2,18 +2,25 @@
 Shared LLM call wrapper for writer.py and verifier.py.
 
 Four providers -- Groq, Gemini, OpenRouter, Hugging Face -- all OpenAI-compatible
-chat-completions APIs. Groq/Gemini/OpenRouter are round-robin rotated per call
-(see _ROTATING_PROVIDERS / _rotating_order() below); HF is a last-resort-only
-fallback (see _LAST_RESORT_PROVIDERS), excluded from rotation while its free
-monthly credit is confirmed depleted. A live check
-(2026-09-06) showed Groq's own GROQ_API_KEY_2..13 all report the same
-"organization" ID in their error responses, so they share one 8000-token/minute
-and 200,000-token/day budget, not independent ones -- key rotation across them was
-tried and removed, it bought nothing. Gemini and OpenRouter were added the same
-day specifically because they're genuinely separate quotas (different companies,
-different accounts), not another key on the same pool. HF's free monthly credit
-was also observed fully depleted mid-session, hence it's last in the order rather
-than removed -- it may recover next month.
+chat-completions APIs. Groq/OpenRouter are round-robin ROTATED per call (see
+_ROTATING_PROVIDERS / _rotating_order() below) -- genuinely independent
+quotas with real headroom. Gemini/HF are LAST-RESORT ONLY (see
+_LAST_RESORT_PROVIDERS), each excluded from rotation for its own confirmed
+hard cap, not a transient rate limit: Gemini's only current (non-retired)
+model caps at 20 requests/DAY on the free tier (real 429, confirmed live in
+CI, 2026-09-07); HF's free monthly credit is fully depleted (real 402).
+Rotating either of those in would proactively burn a tiny, already-scarce
+budget on every call instead of only occasionally, when the two real
+rotating providers both fail for one call.
+
+A live check (2026-09-06) showed Groq's own GROQ_API_KEY_2..13 all report
+the same "organization" ID in their error responses, so they share one
+8000-token/minute and 200,000-token/day budget, not independent ones -- key
+rotation across them was tried and removed, it bought nothing. Gemini and
+OpenRouter were added the same day specifically because they're genuinely
+separate quotas (different companies, different accounts), not another key
+on the same pool -- Gemini's quota just turned out to be too small to be
+useful as anything but an occasional extra.
 
 All four providers speak the same OpenAI-style chat-completions + tool-calling
 format, so one function (call_llm) builds one payload and just changes the
@@ -78,6 +85,15 @@ UA = {"User-Agent": "faithful-brief-agents/0.1 (research; contact via repo)"}
 # by model choice.
 GROQ_MODEL = os.environ.get("AGENT_MODEL_GROQ", "openai/gpt-oss-20b")
 HF_MODEL = os.environ.get("AGENT_MODEL_HF", "meta-llama/Llama-3.3-70B-Instruct")
+# gemini-3.6-flash's free tier caps at 20 requests/DAY (confirmed live via a
+# real 429 in CI, 2026-09-07: "GenerateRequestsPerDayPerProjectPerModel-
+# FreeTier ... quotaValue: 20") -- nowhere near enough for a ~60-90-call eval
+# run. Tried swapping to gemini-2.0-flash for a higher quota; that model is
+# fully retired (confirmed via a real 404: "no longer available ... use
+# models/gemini-3.6-flash"), so 3.6-flash is the only valid current option
+# and its 20/day cap is a genuine account/plan characteristic, not a model
+# choice mistake -- see _ROTATING_PROVIDERS below, Gemini is excluded from
+# rotation for the same reason HF is.
 GEMINI_MODEL = os.environ.get("AGENT_MODEL_GEMINI", "gemini-3.6-flash")
 OPENROUTER_MODEL = os.environ.get("AGENT_MODEL_OPENROUTER", "nvidia/nemotron-3-super-120b-a12b:free")
 
@@ -98,26 +114,17 @@ HF_TOKEN = _clean_env("HF_TOKEN")
 GEMINI_API_KEY = _clean_env("GEMINI_API_KEY")
 OPENROUTER_API_KEY = _clean_env("OPENROUTER_API_KEY")
 
-# Groq, Gemini, and OpenRouter are genuinely independent quotas (added
-# 2026-09-06 specifically because Groq's shared daily quota and HF's shared
-# monthly credit both being per-*organization* pools -- not per-key -- meant
-# no amount of extra Groq/HF keys could add real capacity). These three are
-# round-robin ROTATED (see _rotating_order() below), not just tried in a
-# fixed order, so a burst of calls doesn't hammer one provider's per-minute
-# limit while the other two sit idle -- proactive load-spreading instead of
-# only reacting after a rate limit is already hit.
+# Groq and OpenRouter only: both have quotas real enough to absorb a normal
+# eval run (Groq: 8000 tok/min + 200,000 tok/day; OpenRouter: no hard daily
+# cap observed). Round-robin ROTATED (see _rotating_order() below), not just
+# tried in a fixed order, so a burst of calls doesn't hammer one provider's
+# per-minute limit while the other sits idle.
 _ROTATING_PROVIDERS = [
     {
         "name": "groq",
         "url": "https://api.groq.com/openai/v1/chat/completions",
         "key": GROQ_API_KEY,
         "model": GROQ_MODEL,
-    },
-    {
-        "name": "gemini",
-        "url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-        "key": GEMINI_API_KEY,
-        "model": GEMINI_MODEL,
     },
     {
         "name": "openrouter",
@@ -127,17 +134,26 @@ _ROTATING_PROVIDERS = [
     },
 ]
 
-# HF is DISABLED entirely as of 2026-09-07, not just deprioritized: its free
-# monthly credit is a hard cap, confirmed depleted via a real 402 in CI --
-# and unlike a rate limit, retrying or rotating never helps a hard cap.
-# Worse, keeping it wired as a "last resort" was actively counterproductive:
-# when a large-context call (_corpus_entailment, which sends all 21 corpus
-# abstracts) beat all three rotating providers, HF's guaranteed 402 became
-# the error call_llm() raised -- masking whatever the real Gemini/OpenRouter
-# failure was for that call, which is the actually-useful diagnostic signal.
-# Re-enable by uncommenting once HF's credit resets (or drop it for good if
-# it's not worth keeping).
+# Gemini and HF are LAST-RESORT ONLY, not rotated, both for hard-cap reasons
+# confirmed live in CI (2026-09-07):
+# - Gemini (gemini-3.6-flash, the only current non-retired model): free tier
+#   caps at 20 requests/DAY -- real 429, "GenerateRequestsPerDayPerProjectPer
+#   Model-FreeTier ... quotaValue: 20". Rotating it in exhausts that budget
+#   within the eval's first ~9 claims; kept as an occasional last resort
+#   since 20/day isn't literally zero.
+# - HF: free monthly credit confirmed fully depleted (real 402). A hard
+#   monthly cap doesn't recover from a retry the way a per-minute limit
+#   does, and keeping it in the chain was actively counterproductive: its
+#   guaranteed 402 became the reported error whenever reached, masking
+#   whatever the real Gemini/OpenRouter failure was. Commented out rather
+#   than removed -- trivial to re-enable once its credit resets.
 _LAST_RESORT_PROVIDERS = [
+    {
+        "name": "gemini",
+        "url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+        "key": GEMINI_API_KEY,
+        "model": GEMINI_MODEL,
+    },
     # {
     #     "name": "huggingface",
     #     "url": "https://router.huggingface.co/v1/chat/completions",
