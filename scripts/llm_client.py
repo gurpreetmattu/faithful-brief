@@ -1,8 +1,11 @@
 """
 Shared LLM call wrapper for writer.py and verifier.py.
 
-Four providers, tried in order (see _PROVIDERS below): Groq, Gemini, OpenRouter,
-Hugging Face -- all OpenAI-compatible chat-completions APIs. A live check
+Four providers -- Groq, Gemini, OpenRouter, Hugging Face -- all OpenAI-compatible
+chat-completions APIs. Groq/Gemini/OpenRouter are round-robin rotated per call
+(see _ROTATING_PROVIDERS / _rotating_order() below); HF is a last-resort-only
+fallback (see _LAST_RESORT_PROVIDERS), excluded from rotation while its free
+monthly credit is confirmed depleted. A live check
 (2026-09-06) showed Groq's own GROQ_API_KEY_2..13 all report the same
 "organization" ID in their error responses, so they share one 8000-token/minute
 and 200,000-token/day budget, not independent ones -- key rotation across them was
@@ -95,14 +98,15 @@ HF_TOKEN = _clean_env("HF_TOKEN")
 GEMINI_API_KEY = _clean_env("GEMINI_API_KEY")
 OPENROUTER_API_KEY = _clean_env("OPENROUTER_API_KEY")
 
-# Order matters: cheapest/most-proven-reliable first, since call_llm() below tries
-# each in turn and only falls through on failure. Groq first (fastest, already
-# proven correct); Gemini and OpenRouter next (added 2026-09-06 specifically
-# because Groq's shared daily quota and HF's shared monthly credit both being
-# per-organization pools -- not per-key -- meant no amount of extra Groq/HF keys
-# could add real capacity; these two are genuinely independent quotas); HF last
-# since its free monthly credit was already observed depleted this session.
-_PROVIDERS = [
+# Groq, Gemini, and OpenRouter are genuinely independent quotas (added
+# 2026-09-06 specifically because Groq's shared daily quota and HF's shared
+# monthly credit both being per-*organization* pools -- not per-key -- meant
+# no amount of extra Groq/HF keys could add real capacity). These three are
+# round-robin ROTATED (see _rotating_order() below), not just tried in a
+# fixed order, so a burst of calls doesn't hammer one provider's per-minute
+# limit while the other two sit idle -- proactive load-spreading instead of
+# only reacting after a rate limit is already hit.
+_ROTATING_PROVIDERS = [
     {
         "name": "groq",
         "url": "https://api.groq.com/openai/v1/chat/completions",
@@ -121,6 +125,16 @@ _PROVIDERS = [
         "key": OPENROUTER_API_KEY,
         "model": OPENROUTER_MODEL,
     },
+]
+
+# HF is deliberately EXCLUDED from rotation, not just ordered last: its free
+# monthly credit is a hard cap (confirmed depleted via a real 402 in CI,
+# 2026-09-07), unlike the other three's transient per-minute limits. Rotating
+# it in would proactively route ~1/4 of ALL calls into a guaranteed failure;
+# kept as a last-resort fallback only, tried after all three rotating
+# providers fail for a given call. Re-promote it into _ROTATING_PROVIDERS
+# once its credit resets (or drop it if it's no longer worth keeping).
+_LAST_RESORT_PROVIDERS = [
     {
         "name": "huggingface",
         "url": "https://router.huggingface.co/v1/chat/completions",
@@ -128,6 +142,20 @@ _PROVIDERS = [
         "model": HF_MODEL,
     },
 ]
+
+_rotation_counter = 0
+
+
+def _rotating_order() -> list:
+    """Each call starts at a different rotating provider than the last, so
+    load spreads across all three instead of always hammering Groq first."""
+    global _rotation_counter
+    available = [p for p in _ROTATING_PROVIDERS if p["key"]]
+    if not available:
+        return available
+    offset = _rotation_counter % len(available)
+    _rotation_counter += 1
+    return available[offset:] + available[:offset]
 
 
 def _append_log(record: dict) -> None:
@@ -256,15 +284,15 @@ def call_llm(
     logging/tracing -- it has no effect on the request and carries no state from
     any other call.
 
-    Tries each configured provider in order (see _PROVIDERS). Moves to
-    the next provider on a rate-limit response (after retrying once with a wait)
+    Tries providers in a rotating order (see _rotating_order()), HF last-resort
+    only. Moves to the next provider on a rate-limit response (after retrying once with a wait)
     or on any other request failure (e.g. a model failing to honor a forced tool
     call under a large-context request -- observed with gpt-oss-20b) -- a
     different provider/model is a real chance of success, not a repeat of the
     same failure, so it's worth trying before giving up entirely. Only raises
     once every provider has failed.
     """
-    available = [p for p in _PROVIDERS if p["key"]]
+    available = _rotating_order() + [p for p in _LAST_RESORT_PROVIDERS if p["key"]]
     if not available:
         raise RuntimeError("No provider API key found (GROQ_API_KEY / HF_TOKEN in .env).")
 
