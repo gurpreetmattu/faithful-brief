@@ -128,14 +128,13 @@ The single sentence this project exists to earn:
       dispatch: the real 44-claim live eval, gates on recall only —
       `scripts/eval_verifier.py` now exits 1 iff recall < 1.000, per the
       run-to-run LLM variance observed this session; precision is reported, not
-      blocking). **Not yet actually gating anything**: no GitHub remote exists
-      for this repo yet, so the workflows are committed but have never run.
-      Manual steps still needed (outside this repo, cannot be automated from
-      here — no `gh` CLI in this environment): create the GitHub repo and push;
-      add `GROQ_API_KEY` / `GEMINI_API_KEY` / `OPENROUTER_API_KEY` / `HF_TOKEN`
-      as Actions secrets; enable branch protection on the default branch
-      requiring `fast-checks` (and, once comfortable with its noise, optionally
-      `verifier-eval`) as a required status check.
+      blocking). Repo pushed to `github.com/gurpreetmattu/faithful-brief`
+      (private) — `origin/master` now exists, so `fast-checks` will run on this
+      push. **Still not actually gating anything**: Actions secrets
+      (`GROQ_API_KEY` / `GEMINI_API_KEY` / `OPENROUTER_API_KEY` / `HF_TOKEN`)
+      and branch protection on `master` requiring `fast-checks` (and, once
+      comfortable with its noise, optionally `verifier-eval`) as a required
+      status check are both manual GitHub UI steps, not yet done.
 - [ ] 7. Disagreement detection (needs its own labeled real-vs-apparent-conflict set)
       ← **CURRENT**: contract in `specs/disagreement-schema.md`. Labeling in
       `data/disagreements.jsonl`: **5/? pairs confirmed, all `apparent`** —
