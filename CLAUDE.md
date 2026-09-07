@@ -190,8 +190,8 @@ The single sentence this project exists to earn:
       every run and deliberately never sets a CI exit-code gate (unlike
       `eval_verifier.py`'s recall gate) — gating on an eval set with a known,
       unfilled gap would be false rigor.
-- [ ] 8. UI surfacing citations, disagreements, blocked-claims panel, trust receipt
-      ← **CURRENT**: `scripts/generate_report.py` renders a self-contained
+- [x] 8. UI surfacing citations, disagreements, blocked-claims panel, trust
+      receipt — DONE: `scripts/generate_report.py` renders a self-contained
       static HTML report from a `run_brief.py` result (no server/framework --
       matches the project's dependency-light style). All four panels are now
       real: trust receipt (drafted/verified/blocked counts, per-`block_reason`
@@ -216,7 +216,13 @@ The single sentence this project exists to earn:
       candidate generation is unbuilt (this is a fixed set, not pairs derived
       from the question asked), and genuine-case recall is unmeasured. If the
       checkpoint file doesn't exist yet, the panel says so plainly rather than
-      silently rendering nothing.
+      silently rendering nothing. Visually confirmed in a real browser against
+      the session's real earlier brief run (the multi-hop-QA question that
+      correctly blocked a bad claim) — trust receipt numbers, the blocked
+      claim's block_reason/rationale, and the disagreements panel's
+      match/mismatch pills all render correctly in dark theme; zero external
+      network references confirmed both by grep and by the browser not
+      fetching anything off-origin.
 - [ ] 9. Stretch: retrieval-as-agent (+ arXiv MCP), recency-awareness, scope/decline gate
 
 ## Not yet (premature — do not scaffold before the step that needs it)

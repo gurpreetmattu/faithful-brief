@@ -7,6 +7,14 @@ blocked-claims log (block claims) as JSON to stdout -- always, unchanged from
 before. --html is additive: also render the step 8 report (generate_report.py)
 directly, so asking a question and getting a viewable report is one command
 instead of a JSON-then-convert two-step.
+
+NOTE on the rendered report's disagreements panel: it reads
+data/logs/disagreement_eval_checkpoint.jsonl, which this command does NOT
+produce -- that file only exists after running
+`python scripts/eval_disagreement.py`. Without it, the panel says so plainly
+rather than rendering nothing silently; it never depends on the question asked
+here, since disagreement candidates are a fixed hand-labeled set, not derived
+from a live brief (disagreement-schema.md Sec 1).
 """
 
 from __future__ import annotations
