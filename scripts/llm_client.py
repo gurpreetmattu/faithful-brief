@@ -301,7 +301,20 @@ def call_llm(
         if response is None:
             continue  # this provider failed; try the next
 
-        message = response["choices"][0]["message"]
+        # A 2xx response isn't a guarantee of a real chat-completion body -- some
+        # providers occasionally return 200 with an error-shaped or malformed
+        # payload (observed live in CI, 2026-09-07: "KeyError: 'choices'" crashed
+        # the whole eval uncaught). Same defensive pattern as the forced-tool_choice
+        # check below: treat a missing/malformed body as this provider's failure,
+        # not a crash, and fall through to the next provider.
+        choices = response.get("choices") if isinstance(response, dict) else None
+        if not choices:
+            last_err = RuntimeError(
+                f"{provider['name']} returned a 2xx response with no usable 'choices' "
+                f"(malformed or error-shaped body): {response!r}"
+            )
+            continue
+        message = choices[0]["message"]
         # A forced tool_choice can come back as HTTP 200 with no tool_calls at all
         # -- observed with OpenRouter's nemotron-3-super-120b, which burned its
         # whole max_tokens budget on visible chain-of-thought reasoning and never
