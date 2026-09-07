@@ -224,9 +224,9 @@ The single sentence this project exists to earn:
       network references confirmed both by grep and by the browser not
       fetching anything off-origin.
 - [ ] 9. Stretch: retrieval-as-agent (+ arXiv MCP), recency-awareness, scope/
-      decline gate ← **CURRENT, partial**: scope/decline gate done, the other
-      two sub-items not started (each is independently optional, per this
-      line's own "Stretch" framing).
+      decline gate ← **CURRENT, partial**: scope/decline gate and
+      recency-awareness done; retrieval-as-agent + arXiv MCP not started
+      (independently optional, per this line's own "Stretch" framing).
 
       **Scope/decline gate — DONE**: `specs/scope-gate.md` (binary
       `in_scope`/`decline`, `decline_reason ∈ {off_topic, out_of_corpus}`,
@@ -258,6 +258,31 @@ The single sentence this project exists to earn:
       correctly declined with no Writer/Verifier call, and the rendered HTML
       showed the decline reason and rationale plainly (zero external network
       references, same as every other report path).
+
+      **Recency-awareness — DONE**: `specs/recency-gate.md`. Deliberately
+      mechanical, no LLM call, no ground truth/eval — every fact needed
+      (`frozen_at`, `date_window`, per-paper `submitted_at`/`version_date`) is
+      already a plain date in `data/corpus.v1.json`, so an agent call here
+      would be decorative, not load-bearing (corpus-manifest.md §5 already
+      earmarked this exact use of `submitted_at` vs `version_date`).
+      `scripts/recency.py` (`corpus_access.py` gained two small public
+      accessors, `manifest_meta()`/`paper_dates()`, rather than reaching into
+      its private cache) computes three things: corpus staleness (today vs.
+      `frozen_at`, threshold 90 days — currently 2 days, not stale), whether
+      the question's own wording asks for currency the corpus can't promise
+      (regex + explicit-year check), and a per-citation idea-age note when a
+      paper's pinned version postdates its original submission by >90 days
+      (real example verified: `2005.11401v4`, the original RAG paper, pinned
+      version dated 2021-04-12 but submitted 2020-05-22, a 325-day gap).
+      Advisory only, never blocks (unlike the scope gate) — wired into
+      `run_brief.py` on both the declined and normal paths (`recency` object
+      on every result; `idea_age_note` per citation) and rendered by
+      `generate_report.py` as a banner plus inline per-citation notes.
+      Live-verified: a real recency-sensitive question ("latest work on
+      multi-hop QA") correctly triggered the banner, and real citations
+      correctly showed/omitted idea-age notes depending on each paper's
+      actual date gap — visually confirmed in a real browser alongside the
+      existing trust-receipt and disagreements panels (nothing broke).
 
 ## Not yet (premature — do not scaffold before the step that needs it)
 

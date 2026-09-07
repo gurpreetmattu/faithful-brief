@@ -39,6 +39,25 @@ def paper_ids() -> list:
     return list(_papers_by_id().keys())
 
 
+def manifest_meta() -> dict:
+    """frozen_at + selection_criteria.date_window, for recency.py (specs/recency-gate.md)."""
+    manifest = _load_manifest()
+    return {
+        "frozen_at": manifest["frozen_at"],
+        "date_window": manifest["selection_criteria"]["date_window"],
+    }
+
+
+def paper_dates(paper_id: str) -> Optional[dict]:
+    """submitted_at/version_date for one paper, or None if not in the corpus.
+    Kept as two separate dates per corpus-manifest.md Sec 5: a pinned version's
+    date is not the same as when its underlying ideas were first submitted."""
+    paper = _papers_by_id().get(paper_id)
+    if paper is None:
+        return None
+    return {"submitted_at": paper["submitted_at"], "version_date": paper["version_date"]}
+
+
 def _read_artifact_text(paper_id: str, artifact_kind: str) -> Optional[str]:
     paper = _papers_by_id().get(paper_id)
     if paper is None:

@@ -25,6 +25,7 @@ import html
 import json
 import sys
 from collections import Counter
+from typing import Optional
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -110,6 +111,11 @@ section h2 {
 .pill.match { background: var(--accent-bg); color: var(--accent); }
 .pill.mismatch { background: var(--warn-bg); color: var(--warn); }
 .disagreement .rationale { font-size: 0.85rem; color: var(--muted); margin-top: 8px; }
+.idea-age { font-size: 0.78rem; color: var(--muted); font-style: italic; margin-top: 6px; }
+.recency-banner {
+  background: var(--stub-bg); border: 1px dashed var(--border); border-radius: 8px;
+  padding: 10px 16px; color: var(--muted); font-size: 0.85rem; margin-bottom: 20px;
+}
 """
 
 
@@ -122,6 +128,8 @@ def _claim_block(item: dict, blocked: bool) -> str:
     paper_id = claim["cited_paper_id"]
     span = claim.get("cited_span")
     arxiv_url = f"https://arxiv.org/abs/{paper_id}"
+    idea_note = item.get("idea_age_note")
+    idea_note_html = f'<p class="idea-age">{_esc(idea_note)}</p>' if idea_note else ""
 
     if blocked:
         reason = item.get("block_reason") or "unknown"
@@ -136,6 +144,7 @@ def _claim_block(item: dict, blocked: bool) -> str:
           {span_html}
           <p class="meta">cited to <a href="{arxiv_url}">{_esc(paper_id)}</a></p>
           <p class="rationale">{_esc(rationale)}</p>
+          {idea_note_html}
         </div>
         """
     return f"""
@@ -143,6 +152,7 @@ def _claim_block(item: dict, blocked: bool) -> str:
       <p class="claim-text">{_esc(claim['claim_text'])}</p>
       <blockquote>{_esc(span)}</blockquote>
       <p class="meta">source: <a href="{arxiv_url}">{_esc(paper_id)}</a></p>
+      {idea_note_html}
     </div>
     """
 
@@ -223,6 +233,12 @@ def _disagreements_panel() -> str:
     return caveat + rows_html
 
 
+def _recency_banner(recency: Optional[dict]) -> str:
+    if not recency or not (recency.get("corpus_stale") or recency.get("question_recency_sensitive")):
+        return ""
+    return f'<div class="recency-banner">{_esc(recency.get("note", ""))}</div>'
+
+
 def _declined_html(question: str, result: dict) -> str:
     # Step 9's scope gate short-circuited before any Writer/Verifier call --
     # render that plainly instead of falling through to the normal report,
@@ -241,6 +257,7 @@ def _declined_html(question: str, result: dict) -> str:
 <div class="wrap">
   <h1>Faithful Brief</h1>
   <p class="question">{_esc(question)}</p>
+  {_recency_banner(result.get("recency"))}
   <div class="card">
     <span class="reason">declined: {_esc(reason)}</span>
     <p style="margin-top:10px;">This question was declined by the scope gate
@@ -286,6 +303,7 @@ def render_html(result: dict) -> str:
 <div class="wrap">
   <h1>Faithful Brief</h1>
   <p class="question">{_esc(question)}</p>
+  {_recency_banner(result.get("recency"))}
 
   <div class="card">
     <div class="receipt-stats">

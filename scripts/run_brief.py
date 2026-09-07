@@ -19,6 +19,13 @@ produce -- that file only exists after running
 rather than rendering nothing silently; it never depends on the question asked
 here, since disagreement candidates are a fixed hand-labeled set, not derived
 from a live brief (disagreement-schema.md Sec 1).
+
+Also runs step 9's recency-awareness (specs/recency-gate.md): mechanical,
+no LLM call, advisory only (unlike the scope gate, never blocks). Attaches a
+"recency" object (corpus staleness + whether the question itself asks for
+current/recent work) to every result, and an "idea_age_note" per citation
+when a cited paper's pinned version postdates its original submission by more
+than 90 days.
 """
 
 from __future__ import annotations
@@ -27,9 +34,16 @@ import json
 import sys
 
 from generate_report import render_html
+from recency import check_recency, idea_age_note
 from scope_gate import classify_scope
 from verifier import verify
 from writer import draft_brief
+
+
+def _attach_idea_age_notes(items: list) -> None:
+    for item in items:
+        paper_id = item["claim"]["cited_paper_id"]
+        item["idea_age_note"] = idea_age_note(paper_id)
 
 
 def main():
@@ -45,6 +59,8 @@ def main():
         sys.exit(1)
     question = argv[0]
 
+    recency = check_recency(question)
+
     scope = classify_scope(question)
     if scope.label == "decline":
         result = {
@@ -52,6 +68,7 @@ def main():
             "declined": True,
             "decline_reason": scope.decline_reason,
             "scope_rationale": scope.rationale,
+            "recency": recency.to_dict(),
             "brief": [],
             "blocked": [],
         }
@@ -77,7 +94,10 @@ def main():
         else:
             blocked.append(result.to_dict())
 
-    result = {"question": question, "brief": brief, "blocked": blocked}
+    _attach_idea_age_notes(brief)
+    _attach_idea_age_notes(blocked)
+
+    result = {"question": question, "recency": recency.to_dict(), "brief": brief, "blocked": blocked}
     # ensure_ascii=True: paper-derived text can contain arbitrary Unicode (e.g.
     # non-breaking hyphens), and this console's default stdout encoding
     # (cp1252 on Windows) can't represent it directly. \uXXXX-escaped JSON is
