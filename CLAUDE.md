@@ -145,6 +145,43 @@ The single sentence this project exists to earn:
       before being re-added — not the same keys the eval numbers above were
       produced with, but the same providers/models). Branch protection on
       `master` requires `fast-checks`.
+
+      **`verifier-eval-live.yml`'s own debugging saga, real and instructive**:
+      the workflow never appeared in GitHub's Actions UI/API after its
+      original commit despite `fast-checks.yml` (same commit) indexing fine —
+      fixed by renaming the file to `verifier-eval-live.yml`, forcing GitHub
+      to register it as a fresh workflow entity. Once running, it surfaced
+      five distinct real bugs, each found from an actual CI failure and fixed
+      in `scripts/llm_client.py` (not worked around): (1) GitHub secrets were
+      originally saved with the Name/Value fields mixed up — fixed by
+      deleting and recreating all 4 cleanly; (2) a secret's trailing newline
+      crashed `http.client` with `ValueError: Invalid header value` —
+      `GROQ_API_KEY`/`HF_TOKEN`/`GEMINI_API_KEY`/`OPENROUTER_API_KEY` are now
+      `.strip()`'d on read; (3) a 2xx response with no `choices` (an
+      error-shaped body) crashed with `KeyError: 'choices'` — now treated as
+      a per-provider failure; (4) OpenRouter's free model
+      (`nemotron-3-super-120b`) burned its whole 1200-token budget on visible
+      chain-of-thought reasoning and never reached the forced tool call —
+      `max_tokens` is now overridable per-provider (OpenRouter: 4000); (5) a
+      transient "2xx wrapping an upstream error" (e.g. OpenRouter proxying
+      "Nvidia: Service temporarily overloaded") had zero retry — now retried
+      once on the same provider, same as a real rate-limit `HTTPError`.
+      Provider chain was also restructured: Gemini and HF both turned out to
+      have hard, already-exhausted caps this session (Gemini: 20
+      requests/DAY on its only current non-retired model, `gemini-3.6-flash`;
+      HF: monthly credit fully depleted) — both are commented out (not
+      deleted) in `_LAST_RESORT_PROVIDERS`, re-enable once their quotas
+      reset. `_ROTATING_PROVIDERS` (Groq + OpenRouter) are round-robin
+      rotated per call rather than tried in a fixed order, so load spreads
+      proactively instead of always hammering Groq first.
+      **Not yet fully green**: the last attempt reached claim 15/44 with zero
+      remaining code errors, stopped only by Groq's own daily token quota
+      (200,000 TPD) — nearly exhausted by this session's own extensive
+      testing (many CI runs plus local sanity checks), not a defect. Every
+      bug found is permanently fixed; a clean run is expected once Groq's
+      quota clears (it's a rolling window, not a fixed reset — the last
+      failure quoted "try again in 33m46s"), not something still being
+      debugged.
 - [ ] 7. Disagreement detection (needs its own labeled real-vs-apparent-conflict set)
       ← **CURRENT**: contract in `specs/disagreement-schema.md`. Labeling in
       `data/disagreements.jsonl`: **5/? pairs confirmed, all `apparent`** —
