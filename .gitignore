@@ -32,8 +32,11 @@ htmlcov/
 
 # --- Data ---
 # The frozen corpus and ground-truth labels ARE committed (invariant 4: corpus is
-# versioned/pinned). Only transient caches and derived artifacts are ignored.
-data/cache/
+# versioned/pinned) -- data/cache/ holds the actual raw artifacts corpus.v1.json's
+# sha256_content hashes pin, and check_claims_integrity.py's mechanical span
+# re-verification depends on it being present in a clean checkout (found via a
+# real fast-checks CI failure: it passed locally only because data/cache/ already
+# existed on disk). Only transient run logs are ignored.
 data/logs/
 data/**/*.tmp
 *.log
