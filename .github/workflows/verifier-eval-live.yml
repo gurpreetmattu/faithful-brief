@@ -1,11 +1,5 @@
 name: verifier-eval
 
-# Touched 2026-09-07 to force GitHub to re-index this workflow file: it never
-# appeared in the Actions UI/API after its original commit, even though
-# fast-checks.yml (added in the same commit) indexed and ran correctly --
-# path, byte content, and YAML structure were all verified identical in shape
-# to fast-checks.yml, so this is being treated as a one-off indexing miss.
-
 # Tier 2 of build-order step 6 (CLAUDE.md): the real 44-claim live eval against
 # data/claims.jsonl (specs/writer-verifier.md Sec 7 -- bypasses the Writer
 # entirely). Only runs when a PR touches the Writer/Verifier code or the specs/
@@ -44,27 +38,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
-      # TEMPORARY debug step -- prints only whether each secret is empty/set
-      # and its length, never the value itself, to isolate whether this is a
-      # secrets problem or something else (see the RuntimeError this is
-      # investigating: "No provider API key found" on the very first call).
-      # Remove once verifier-eval runs clean.
-      - name: Debug -- check secret presence (no values printed)
-        env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: |
-          for name in GROQ_API_KEY GEMINI_API_KEY OPENROUTER_API_KEY HF_TOKEN; do
-            val="${!name}"
-            if [ -z "$val" ]; then
-              echo "$name: EMPTY/UNSET"
-            else
-              echo "$name: set, length=${#val}"
-            fi
-          done
 
       - name: Run Verifier against all ground-truth claims
         working-directory: scripts

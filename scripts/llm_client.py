@@ -78,10 +78,22 @@ HF_MODEL = os.environ.get("AGENT_MODEL_HF", "meta-llama/Llama-3.3-70B-Instruct")
 GEMINI_MODEL = os.environ.get("AGENT_MODEL_GEMINI", "gemini-3.6-flash")
 OPENROUTER_MODEL = os.environ.get("AGENT_MODEL_OPENROUTER", "nvidia/nemotron-3-super-120b-a12b:free")
 
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
-HF_TOKEN = os.environ.get("HF_TOKEN")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
+# .strip() defensively: a credential pasted from an editor selection (or a
+# GitHub Actions secret saved with a trailing newline) can carry a stray \n
+# or space, which urllib/http.client rejects outright when it lands in an
+# Authorization header ("ValueError: Invalid header value") -- a real failure
+# hit on live CI (verifier-eval, 2026-09-07) once a call fell through to a
+# provider whose key had exactly this problem. No downside to stripping a
+# key that was already clean.
+def _clean_env(name: str) -> "str | None":
+    val = os.environ.get(name)
+    return val.strip() if val is not None else None
+
+
+GROQ_API_KEY = _clean_env("GROQ_API_KEY")
+HF_TOKEN = _clean_env("HF_TOKEN")
+GEMINI_API_KEY = _clean_env("GEMINI_API_KEY")
+OPENROUTER_API_KEY = _clean_env("OPENROUTER_API_KEY")
 
 # Order matters: cheapest/most-proven-reliable first, since call_llm() below tries
 # each in turn and only falls through on failure. Groq first (fastest, already
