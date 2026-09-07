@@ -346,8 +346,7 @@ def call_llm(
         max_attempts = 2
         for attempt in range(max_attempts):
             try:
-                response = _post(provider, payload)
-                break
+                candidate = _post(provider, payload)
             except urllib.error.HTTPError as e:
                 err_body = e.read().decode("utf-8", errors="replace")
                 is_rate_limit = e.code in (429, 413) and "rate_limit_exceeded" in err_body
@@ -360,23 +359,32 @@ def call_llm(
                     time.sleep(wait_s)
                     continue
                 break  # rate-limit retries exhausted, or a non-rate-limit error -- try next provider
+
+            # A 2xx HTTP status isn't a guarantee of a real chat-completion body
+            # -- some providers wrap an upstream failure as 200 with an
+            # "error"-shaped JSON body instead of a real HTTPError (observed
+            # live in CI, 2026-09-07: OpenRouter proxying "Upstream error from
+            # Nvidia: Service temporarily overloaded", and separately a bare
+            # "KeyError: 'choices'" crash before this retry existed). Unlike a
+            # malformed/never-recoverable body, "temporarily overloaded" is
+            # explicitly worth one short retry on the SAME provider before
+            # giving up on it for this call.
+            if not (isinstance(candidate, dict) and candidate.get("choices")):
+                last_err = RuntimeError(
+                    f"{provider['name']} returned a 2xx response with no usable 'choices' "
+                    f"(malformed or error-shaped body): {candidate!r}"
+                )
+                if attempt < max_attempts - 1:
+                    time.sleep(5)
+                    continue
+                break
+
+            response = candidate
+            break
         if response is None:
             continue  # this provider failed; try the next
 
-        # A 2xx response isn't a guarantee of a real chat-completion body -- some
-        # providers occasionally return 200 with an error-shaped or malformed
-        # payload (observed live in CI, 2026-09-07: "KeyError: 'choices'" crashed
-        # the whole eval uncaught). Same defensive pattern as the forced-tool_choice
-        # check below: treat a missing/malformed body as this provider's failure,
-        # not a crash, and fall through to the next provider.
-        choices = response.get("choices") if isinstance(response, dict) else None
-        if not choices:
-            last_err = RuntimeError(
-                f"{provider['name']} returned a 2xx response with no usable 'choices' "
-                f"(malformed or error-shaped body): {response!r}"
-            )
-            continue
-        message = choices[0]["message"]
+        message = response["choices"][0]["message"]
         # A forced tool_choice can come back as HTTP 200 with no tool_calls at all
         # -- observed with OpenRouter's nemotron-3-super-120b, which burned its
         # whole max_tokens budget on visible chain-of-thought reasoning and never
