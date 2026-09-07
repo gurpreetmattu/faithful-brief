@@ -223,10 +223,8 @@ The single sentence this project exists to earn:
       match/mismatch pills all render correctly in dark theme; zero external
       network references confirmed both by grep and by the browser not
       fetching anything off-origin.
-- [ ] 9. Stretch: retrieval-as-agent (+ arXiv MCP), recency-awareness, scope/
-      decline gate ← **CURRENT, partial**: scope/decline gate and
-      recency-awareness done; retrieval-as-agent + arXiv MCP not started
-      (independently optional, per this line's own "Stretch" framing).
+- [x] 9. Stretch: retrieval-as-agent (+ arXiv MCP), recency-awareness, scope/
+      decline gate — DONE, all three sub-items.
 
       **Scope/decline gate — DONE**: `specs/scope-gate.md` (binary
       `in_scope`/`decline`, `decline_reason ∈ {off_topic, out_of_corpus}`,
@@ -283,6 +281,34 @@ The single sentence this project exists to earn:
       correctly showed/omitted idea-age notes depending on each paper's
       actual date gap — visually confirmed in a real browser alongside the
       existing trust-receipt and disagreements panels (nothing broke).
+
+      **Retrieval-as-agent (+ arXiv MCP) — DONE, deliberately narrow**:
+      `specs/live-discovery.md`. Scoped to **discovery only** after weighing
+      it against a full live-citation path and rejecting that as too big and
+      too risky for a "Stretch" line — it would need a second, parallel
+      span-verification path alongside `corpus_access.py`, real-time
+      untrusted-input handling for unaudited content, and no ground truth to
+      eval it against, and would blur the exact trust story (INVARIANT 4: a
+      fixed, versioned, audited corpus) that is this project's core thesis.
+      `scripts/live_discovery.py`'s `search_live()` makes a real live arXiv
+      API call (reusing `fetch_corpus.py`'s `http_get` retry/User-Agent
+      convention), filters out anything already in the frozen 21 (mechanical
+      set-membership, not a judgment call — same "no ground truth needed"
+      reasoning as `recency.py`), and returns real titles/links only.
+      **Never touches `data/corpus.v1.json` or `data/cache/`, is never
+      imported by `writer.py`/`verifier.py`, and a live result can never
+      become a `cited_paper_id`** — there is no code path where that could
+      happen. Live-verified against the real arXiv API three separate times:
+      normal search returned 5 real on-topic papers, none from the frozen
+      corpus; a forced test using a frozen paper's exact title (GraphRAG's)
+      confirmed the exclusion filter actually works, not just in the common
+      case; and a full `run_brief.py --html` run on a real declined question
+      rendered a real "Beyond the frozen corpus" section with 5 real live
+      results, explicitly labeled "NOT verified and NOT cited," confirmed
+      visually in a browser alongside every other panel.
+
+      All three step 9 sub-items are now done — the entire build order (0–9)
+      is complete.
 
 ## Not yet (premature — do not scaffold before the step that needs it)
 

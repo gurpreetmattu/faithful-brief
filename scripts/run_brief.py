@@ -26,6 +26,13 @@ no LLM call, advisory only (unlike the scope gate, never blocks). Attaches a
 current/recent work) to every result, and an "idea_age_note" per citation
 when a cited paper's pinned version postdates its original submission by more
 than 90 days.
+
+Also runs step 9's live discovery (specs/live-discovery.md): a real, live
+arXiv search for papers beyond the frozen 21, attached as a "live_discovery"
+list. DISCOVERY ONLY -- these results are never fed to the Writer or
+Verifier and can never appear as a cited_paper_id in brief/blocked; see the
+spec for why. Runs on both the declined and normal paths, since a declined
+question is exactly when a pointer elsewhere is most useful.
 """
 
 from __future__ import annotations
@@ -34,6 +41,7 @@ import json
 import sys
 
 from generate_report import render_html
+from live_discovery import search_live
 from recency import check_recency, idea_age_note
 from scope_gate import classify_scope
 from verifier import verify
@@ -60,6 +68,7 @@ def main():
     question = argv[0]
 
     recency = check_recency(question)
+    live_discovery = [r.to_dict() for r in search_live(question)]
 
     scope = classify_scope(question)
     if scope.label == "decline":
@@ -69,6 +78,7 @@ def main():
             "decline_reason": scope.decline_reason,
             "scope_rationale": scope.rationale,
             "recency": recency.to_dict(),
+            "live_discovery": live_discovery,
             "brief": [],
             "blocked": [],
         }
@@ -97,7 +107,13 @@ def main():
     _attach_idea_age_notes(brief)
     _attach_idea_age_notes(blocked)
 
-    result = {"question": question, "recency": recency.to_dict(), "brief": brief, "blocked": blocked}
+    result = {
+        "question": question,
+        "recency": recency.to_dict(),
+        "live_discovery": live_discovery,
+        "brief": brief,
+        "blocked": blocked,
+    }
     # ensure_ascii=True: paper-derived text can contain arbitrary Unicode (e.g.
     # non-breaking hyphens), and this console's default stdout encoding
     # (cp1252 on Windows) can't represent it directly. \uXXXX-escaped JSON is

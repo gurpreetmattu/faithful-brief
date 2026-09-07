@@ -9,12 +9,15 @@ file opens correctly straight from disk with no network access.
 Sections: a trust receipt (plain numbers on what was checked -- CLAUDE.md's
 "the trust is the product" given an actual visual form), the citations that
 made it into the brief, the blocked claims (the demo money-shot: the system
-catching a bad claim), and disagreements -- real detector output (from
+catching a bad claim), disagreements -- real detector output (from
 data/logs/disagreement_eval_checkpoint.jsonl, produced by
 scripts/eval_disagreement.py) shown against the human labels for the fixed
 candidate set in data/disagreements.jsonl. This module makes no LLM calls
 itself and never generates candidate pairs (that's an unbuilt problem, spec
-Sec 1) -- it only renders whatever the detector has already, really, said.
+Sec 1) -- it only renders whatever the detector has already, really, said --
+and "beyond the frozen corpus": live arXiv search results
+(specs/live-discovery.md), explicitly labeled not verified/not cited so they
+can never be mistaken for a real citation the Verifier checked.
 
 Usage: python scripts/generate_report.py <brief.json> [-o out.html]
 """
@@ -116,6 +119,13 @@ section h2 {
   background: var(--stub-bg); border: 1px dashed var(--border); border-radius: 8px;
   padding: 10px 16px; color: var(--muted); font-size: 0.85rem; margin-bottom: 20px;
 }
+.discovery-note { font-size: 0.85rem; color: var(--muted); margin-bottom: 14px; }
+.discovery-item { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.discovery-item:last-child { border-bottom: none; }
+.discovery-item .title { font-weight: 600; margin: 0 0 4px; }
+.discovery-item .title a { color: var(--text); text-decoration: none; }
+.discovery-item .title a:hover { color: var(--accent); }
+.discovery-item .snippet { font-size: 0.85rem; color: var(--muted); }
 """
 
 
@@ -233,6 +243,26 @@ def _disagreements_panel() -> str:
     return caveat + rows_html
 
 
+def _live_discovery_html(live_discovery: Optional[list]) -> str:
+    note = (
+        '<p class="discovery-note"><strong>Beyond the frozen corpus</strong> -- '
+        "live arXiv search results, NOT verified and NOT cited in this brief "
+        "(specs/live-discovery.md). For your own follow-up reading only.</p>"
+    )
+    if not live_discovery:
+        return note + "<p class='empty'>No live results found (or none beyond the frozen corpus).</p>"
+    items = "\n".join(
+        f"""
+        <div class="discovery-item">
+          <p class="title"><a href="{_esc(r['arxiv_url'])}">{_esc(r['title'])}</a></p>
+          <p class="snippet">{_esc(r['abstract_snippet'])}</p>
+        </div>
+        """
+        for r in live_discovery
+    )
+    return note + items
+
+
 def _recency_banner(recency: Optional[dict]) -> str:
     if not recency or not (recency.get("corpus_stale") or recency.get("question_recency_sensitive")):
         return ""
@@ -265,6 +295,11 @@ def _declined_html(question: str, result: dict) -> str:
     made -- no brief was attempted.</p>
     <p class="receipt-note">{_esc(rationale)}</p>
   </div>
+
+  <section>
+    <h2>Beyond the frozen corpus</h2>
+    {_live_discovery_html(result.get("live_discovery"))}
+  </section>
 </div>
 </body>
 </html>
@@ -334,6 +369,11 @@ def render_html(result: dict) -> str:
   <section>
     <h2>Disagreements</h2>
     {_disagreements_panel()}
+  </section>
+
+  <section>
+    <h2>Beyond the frozen corpus</h2>
+    {_live_discovery_html(result.get("live_discovery"))}
   </section>
 </div>
 </body>
