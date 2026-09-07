@@ -193,20 +193,30 @@ The single sentence this project exists to earn:
 - [ ] 8. UI surfacing citations, disagreements, blocked-claims panel, trust receipt
       ← **CURRENT**: `scripts/generate_report.py` renders a self-contained
       static HTML report from a `run_brief.py` result (no server/framework --
-      matches the project's dependency-light style). Three of four panels are
+      matches the project's dependency-light style). All four panels are now
       real: trust receipt (drafted/verified/blocked counts, per-`block_reason`
-      breakdown), citations (linked to arXiv, span shown verbatim), and blocked
+      breakdown), citations (linked to arXiv, span shown verbatim), blocked
       claims (the demo money-shot — a real caught claim, verified end-to-end
-      against genuine Verifier output, not a fabricated fixture). Disagreements
-      is an honest "not yet available" placeholder — step 7 has no detector
-      yet — not fake data standing in for a feature that doesn't exist.
-      `run_brief.py --html out.html` renders the report directly in one
-      command. Also fixed two real bugs surfaced while testing this end-to-end:
-      `_wait_for_groq_budget` crashed on an empty history when a single call's
-      own estimated size exceeded the whole per-minute budget; `run_brief.py`'s
-      stdout JSON crashed on Unicode paper text under this console's cp1252
-      default (now `ensure_ascii=True`). Not yet done: disagreements panel
-      needs step 7's detector.
+      against genuine Verifier output, not a fabricated fixture), and
+      disagreements — wired to step 7's real `disagreement_detector.py` output
+      once that existed. `run_brief.py --html out.html` renders the report
+      directly in one command. Also fixed two real bugs surfaced while testing
+      this end-to-end: `_wait_for_groq_budget` crashed on an empty history when
+      a single call's own estimated size exceeded the whole per-minute budget;
+      `run_brief.py`'s stdout JSON crashed on Unicode paper text under this
+      console's cp1252 default (now `ensure_ascii=True`).
+
+      **The disagreements panel's honest shape, not swept under the rug**:
+      `generate_report.py` itself makes no LLM calls (stays a pure renderer,
+      like every other panel) — it reads `data/logs/disagreement_eval_checkpoint.jsonl`
+      (produced by running `scripts/eval_disagreement.py`) and shows each of
+      the 5 fixed candidate pairs from `data/disagreements.jsonl` with BOTH the
+      human label and the detector's live verdict side by side, mismatches
+      shown as mismatches (not hidden), plus the same standing caveat as step 7:
+      candidate generation is unbuilt (this is a fixed set, not pairs derived
+      from the question asked), and genuine-case recall is unmeasured. If the
+      checkpoint file doesn't exist yet, the panel says so plainly rather than
+      silently rendering nothing.
 - [ ] 9. Stretch: retrieval-as-agent (+ arXiv MCP), recency-awareness, scope/decline gate
 
 ## Not yet (premature — do not scaffold before the step that needs it)

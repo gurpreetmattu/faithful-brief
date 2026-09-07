@@ -9,9 +9,12 @@ file opens correctly straight from disk with no network access.
 Sections: a trust receipt (plain numbers on what was checked -- CLAUDE.md's
 "the trust is the product" given an actual visual form), the citations that
 made it into the brief, the blocked claims (the demo money-shot: the system
-catching a bad claim), and disagreements -- which is an HONEST PLACEHOLDER,
-not fake data: step 7 has no detector yet, only hand-labeled ground truth in
-data/disagreements.jsonl. Never render a sample/fabricated disagreement here.
+catching a bad claim), and disagreements -- real detector output (from
+data/logs/disagreement_eval_checkpoint.jsonl, produced by
+scripts/eval_disagreement.py) shown against the human labels for the fixed
+candidate set in data/disagreements.jsonl. This module makes no LLM calls
+itself and never generates candidate pairs (that's an unbuilt problem, spec
+Sec 1) -- it only renders whatever the detector has already, really, said.
 
 Usage: python scripts/generate_report.py <brief.json> [-o out.html]
 """
@@ -26,6 +29,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DISAGREEMENTS_PATH = REPO_ROOT / "data" / "disagreements.jsonl"
+DISAGREEMENT_CHECKPOINT_PATH = REPO_ROOT / "data" / "logs" / "disagreement_eval_checkpoint.jsonl"
 
 _STYLE = """
 :root {
@@ -87,6 +91,25 @@ section h2 {
   border-radius: 10px; padding: 18px 22px; color: var(--muted); font-size: 0.9rem;
 }
 .stub strong { color: var(--text); }
+.caveat {
+  background: var(--stub-bg); border: 1px dashed var(--border);
+  border-radius: 8px; padding: 12px 16px; color: var(--muted); font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+.caveat strong { color: var(--text); }
+.disagreement { border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; margin-bottom: 14px; }
+.disagreement .topic { font-weight: 600; margin: 0 0 10px; }
+.disagreement .spans { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.disagreement .span-row { font-size: 0.88rem; }
+.disagreement .span-row .who { color: var(--muted); font-size: 0.78rem; }
+.disagreement .verdicts { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.82rem; }
+.pill {
+  display: inline-block; border-radius: 4px; padding: 2px 9px; font-weight: 600;
+}
+.pill.human { background: var(--stub-bg); color: var(--text); border: 1px solid var(--border); }
+.pill.match { background: var(--accent-bg); color: var(--accent); }
+.pill.mismatch { background: var(--warn-bg); color: var(--warn); }
+.disagreement .rationale { font-size: 0.85rem; color: var(--muted); margin-top: 8px; }
 """
 
 
@@ -124,20 +147,80 @@ def _claim_block(item: dict, blocked: bool) -> str:
     """
 
 
-def _disagreements_stub() -> str:
-    count = 0
-    if DISAGREEMENTS_PATH.exists():
-        with open(DISAGREEMENTS_PATH, encoding="utf-8") as f:
-            count = sum(1 for line in f if line.strip())
+def _load_jsonl(path: Path) -> list:
+    if not path.exists():
+        return []
+    rows = []
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+    return rows
+
+
+def _disagreement_row(pair: dict, detector: dict | None) -> str:
+    human_pill = f'<span class="pill human">human: {_esc(pair["label"])}</span>'
+
+    if detector is None:
+        detector_pill = '<span class="pill human">detector: not run</span>'
+        rationale_html = ""
+    else:
+        got_label = detector["label"]
+        match = got_label == pair["label"]
+        cls = "match" if match else "mismatch"
+        detector_pill = f'<span class="pill {cls}">detector: {_esc(got_label)}</span>'
+        rationale_html = f'<p class="rationale">{_esc(detector.get("rationale", ""))}</p>'
+
+    reason_bits = []
+    if pair.get("apparent_reason"):
+        reason_bits.append(f'<span class="pill human">human reason: {_esc(pair["apparent_reason"])}</span>')
+    if detector is not None and detector.get("apparent_reason"):
+        reason_bits.append(f'<span class="pill human">detector reason: {_esc(detector["apparent_reason"])}</span>')
+
     return f"""
-    <div class="stub">
-      <strong>Not yet available.</strong> Step 7 (disagreement detection) has no
-      detector built yet -- only hand-labeled ground truth exists so far:
-      {count} real cross-paper pairs in <code>data/disagreements.jsonl</code>,
-      each labeled genuine or apparent per <code>specs/disagreement-schema.md</code>.
-      This panel will surface real detected disagreements once that detector exists.
+    <div class="disagreement">
+      <p class="topic">{_esc(pair['topic'])}</p>
+      <div class="spans">
+        <div class="span-row"><span class="who">{_esc(pair['paper_a_id'])}:</span> &ldquo;{_esc(pair['span_a'])}&rdquo;</div>
+        <div class="span-row"><span class="who">{_esc(pair['paper_b_id'])}:</span> &ldquo;{_esc(pair['span_b'])}&rdquo;</div>
+      </div>
+      <div class="verdicts">{human_pill}{detector_pill}{''.join(reason_bits)}</div>
+      {rationale_html}
     </div>
     """
+
+
+def _disagreements_panel() -> str:
+    pairs = _load_jsonl(DISAGREEMENTS_PATH)
+    if not pairs:
+        return '<div class="stub"><strong>No ground-truth pairs found.</strong></div>'
+
+    detector_by_id = {r["pair_id"]: r for r in _load_jsonl(DISAGREEMENT_CHECKPOINT_PATH)}
+    has_genuine = any(p["label"] == "genuine" for p in pairs)
+
+    caveat = f"""
+    <div class="caveat">
+      <strong>What this panel is, honestly:</strong> {len(pairs)} hand-labeled
+      candidate pairs from <code>data/disagreements.jsonl</code>
+      (<code>specs/disagreement-schema.md</code>) -- a fixed set, not pairs
+      generated from the question above. Finding candidate pairs is a separate,
+      unbuilt problem (spec &sect;1); this only shows what
+      <code>scripts/disagreement_detector.py</code> says about pairs a human
+      already identified. Detector verdicts below come from
+      <code>data/logs/disagreement_eval_checkpoint.jsonl</code>
+      ({"present" if detector_by_id else "not found -- run scripts/eval_disagreement.py first"}).
+      {"" if has_genuine else (
+          "<br><strong>No `genuine` example exists in this set</strong> -- every row "
+          "is `apparent`, so the detector's recall on a real genuine disagreement is "
+          "unmeasured. A detector that always answered \"apparent\" would look just "
+          "as good here."
+      )}
+    </div>
+    """
+
+    rows_html = "\n".join(_disagreement_row(p, detector_by_id.get(p["pair_id"])) for p in pairs)
+    return caveat + rows_html
 
 
 def render_html(result: dict) -> str:
@@ -199,7 +282,7 @@ def render_html(result: dict) -> str:
 
   <section>
     <h2>Disagreements</h2>
-    {_disagreements_stub()}
+    {_disagreements_panel()}
   </section>
 </div>
 </body>

@@ -116,7 +116,12 @@ def main():
             got_label = result.label
             got_reason = result.apparent_reason
             append_checkpoint(
-                {"pair_id": row["pair_id"], "label": got_label, "apparent_reason": got_reason}
+                {
+                    "pair_id": row["pair_id"],
+                    "label": got_label,
+                    "apparent_reason": got_reason,
+                    "rationale": result.rationale,
+                }
             )
 
         label_ok = got_label == row["label"]
