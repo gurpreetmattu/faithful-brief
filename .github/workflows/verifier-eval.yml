@@ -1,5 +1,11 @@
 name: verifier-eval
 
+# Touched 2026-09-07 to force GitHub to re-index this workflow file: it never
+# appeared in the Actions UI/API after its original commit, even though
+# fast-checks.yml (added in the same commit) indexed and ran correctly --
+# path, byte content, and YAML structure were all verified identical in shape
+# to fast-checks.yml, so this is being treated as a one-off indexing miss.
+
 # Tier 2 of build-order step 6 (CLAUDE.md): the real 44-claim live eval against
 # data/claims.jsonl (specs/writer-verifier.md Sec 7 -- bypasses the Writer
 # entirely). Only runs when a PR touches the Writer/Verifier code or the specs/
