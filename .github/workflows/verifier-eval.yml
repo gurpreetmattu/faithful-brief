@@ -45,6 +45,27 @@ jobs:
         with:
           python-version: "3.12"
 
+      # TEMPORARY debug step -- prints only whether each secret is empty/set
+      # and its length, never the value itself, to isolate whether this is a
+      # secrets problem or something else (see the RuntimeError this is
+      # investigating: "No provider API key found" on the very first call).
+      # Remove once verifier-eval runs clean.
+      - name: Debug -- check secret presence (no values printed)
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          for name in GROQ_API_KEY GEMINI_API_KEY OPENROUTER_API_KEY HF_TOKEN; do
+            val="${!name}"
+            if [ -z "$val" ]; then
+              echo "$name: EMPTY/UNSET"
+            else
+              echo "$name: set, length=${#val}"
+            fi
+          done
+
       - name: Run Verifier against all ground-truth claims
         working-directory: scripts
         env:
