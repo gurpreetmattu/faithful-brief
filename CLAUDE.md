@@ -118,23 +118,33 @@ The single sentence this project exists to earn:
       a `data/logs/eval_checkpoint.jsonl` checkpoint so repeated interruptions
       (rate limits, and separately the host machine repeatedly running low on
       memory) never re-spent budget on already-evaluated claims.
-- [ ] 6. Evals into CI (gate merges) — only after step 5 numbers are locally stable
-      ← **CURRENT**: tiered design implemented and committed —
-      `.github/workflows/fast-checks.yml` (every push/PR, no LLM calls: schema
-      validation + mechanical `cited_span` re-verification via
-      `scripts/check_claims_integrity.py`, always gates) and
+- [x] 6. Evals into CI (gate merges) — DONE: tiered design implemented, pushed,
+      and live-gating. `.github/workflows/fast-checks.yml` (every push/PR, no
+      LLM calls: schema validation + mechanical `cited_span` re-verification
+      via `scripts/check_claims_integrity.py`, always gates) and
       `.github/workflows/verifier-eval.yml` (only on changes touching
       Writer/Verifier code, specs/, or the ground-truth data, plus manual
       dispatch: the real 44-claim live eval, gates on recall only —
-      `scripts/eval_verifier.py` now exits 1 iff recall < 1.000, per the
-      run-to-run LLM variance observed this session; precision is reported, not
-      blocking). Repo pushed to `github.com/gurpreetmattu/faithful-brief`
-      (private) — `origin/master` now exists, so `fast-checks` will run on this
-      push. **Still not actually gating anything**: Actions secrets
+      `scripts/eval_verifier.py` exits 1 iff recall < 1.000, per the run-to-run
+      LLM variance observed this session; precision is reported, not
+      blocking). Repo is at `github.com/gurpreetmattu/faithful-brief`
+      (**public** — GitHub only enforces branch protection on private repos on
+      paid org plans, discovered live when the free-tier warning appeared;
+      going public was the honest fix given the project's own thesis is
+      showing real eval numbers, not a workaround). `fast-checks` confirmed
+      green on a real push; a real CI failure was caught and fixed along the
+      way (`data/cache/` was gitignored, so a clean CI checkout had no
+      artifacts for `check_claims_integrity.py`'s span re-verification to
+      check against — it only ever passed locally because the cache already
+      existed on disk; fixed by committing `data/cache/`, since
+      `corpus.v1.json`'s `sha256_content` hashes were always meant to pin
+      those exact files per INVARIANT 4). All 4 Actions secrets
       (`GROQ_API_KEY` / `GEMINI_API_KEY` / `OPENROUTER_API_KEY` / `HF_TOKEN`)
-      and branch protection on `master` requiring `fast-checks` (and, once
-      comfortable with its noise, optionally `verifier-eval`) as a required
-      status check are both manual GitHub UI steps, not yet done.
+      added and rotated (original values were briefly pasted into this
+      session's chat, so all 4 were revoked/regenerated at their providers
+      before being re-added — not the same keys the eval numbers above were
+      produced with, but the same providers/models). Branch protection on
+      `master` requires `fast-checks`.
 - [ ] 7. Disagreement detection (needs its own labeled real-vs-apparent-conflict set)
       ← **CURRENT**: contract in `specs/disagreement-schema.md`. Labeling in
       `data/disagreements.jsonl`: **5/? pairs confirmed, all `apparent`** —
