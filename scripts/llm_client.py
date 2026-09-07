@@ -127,20 +127,23 @@ _ROTATING_PROVIDERS = [
     },
 ]
 
-# HF is deliberately EXCLUDED from rotation, not just ordered last: its free
-# monthly credit is a hard cap (confirmed depleted via a real 402 in CI,
-# 2026-09-07), unlike the other three's transient per-minute limits. Rotating
-# it in would proactively route ~1/4 of ALL calls into a guaranteed failure;
-# kept as a last-resort fallback only, tried after all three rotating
-# providers fail for a given call. Re-promote it into _ROTATING_PROVIDERS
-# once its credit resets (or drop it if it's no longer worth keeping).
+# HF is DISABLED entirely as of 2026-09-07, not just deprioritized: its free
+# monthly credit is a hard cap, confirmed depleted via a real 402 in CI --
+# and unlike a rate limit, retrying or rotating never helps a hard cap.
+# Worse, keeping it wired as a "last resort" was actively counterproductive:
+# when a large-context call (_corpus_entailment, which sends all 21 corpus
+# abstracts) beat all three rotating providers, HF's guaranteed 402 became
+# the error call_llm() raised -- masking whatever the real Gemini/OpenRouter
+# failure was for that call, which is the actually-useful diagnostic signal.
+# Re-enable by uncommenting once HF's credit resets (or drop it for good if
+# it's not worth keeping).
 _LAST_RESORT_PROVIDERS = [
-    {
-        "name": "huggingface",
-        "url": "https://router.huggingface.co/v1/chat/completions",
-        "key": HF_TOKEN,
-        "model": HF_MODEL,
-    },
+    # {
+    #     "name": "huggingface",
+    #     "url": "https://router.huggingface.co/v1/chat/completions",
+    #     "key": HF_TOKEN,
+    #     "model": HF_MODEL,
+    # },
 ]
 
 _rotation_counter = 0
