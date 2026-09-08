@@ -174,14 +174,18 @@ The single sentence this project exists to earn:
       reset. `_ROTATING_PROVIDERS` (Groq + OpenRouter) are round-robin
       rotated per call rather than tried in a fixed order, so load spreads
       proactively instead of always hammering Groq first.
-      **Not yet fully green**: the last attempt reached claim 15/44 with zero
-      remaining code errors, stopped only by Groq's own daily token quota
-      (200,000 TPD) — nearly exhausted by this session's own extensive
-      testing (many CI runs plus local sanity checks), not a defect. Every
-      bug found is permanently fixed; a clean run is expected once Groq's
-      quota clears (it's a rolling window, not a fixed reset — the last
-      failure quoted "try again in 33m46s"), not something still being
-      debugged.
+      **First fully clean run achieved 2026-09-08** (~30 min, real live LLM
+      calls end to end): **n=44, TP=20, FP=3, FN=0, TN=21 — accuracy=0.932,
+      precision=0.870, recall=1.000, f1=0.930. Recall 100% in every one of
+      the six `perturbation_type`s** — the exact condition the CI gate checks
+      (`eval_verifier.py` exits 1 iff recall < 1.000). Slightly different FP
+      count than the original local step-5 run (3 here vs. 2 there, both
+      over-cautious blocks of a genuinely supported claim, not a missed
+      unfaithful one) — expected run-to-run LLM variance, already documented,
+      doesn't affect the gate. `verifier-eval-live.yml` is now proven, not
+      just plausible: the workflow itself, all 4 secrets, and every provider
+      in the fallback/rotation chain have been exercised by a real, complete,
+      passing run in GitHub's own infrastructure.
 - [ ] 7. Disagreement detection (needs its own labeled real-vs-apparent-conflict set)
       ← **CURRENT**: contract in `specs/disagreement-schema.md`. Labeling in
       `data/disagreements.jsonl`: **5/? pairs confirmed, all `apparent`** —
